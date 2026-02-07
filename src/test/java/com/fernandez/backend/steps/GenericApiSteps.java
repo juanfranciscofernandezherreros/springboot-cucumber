@@ -509,4 +509,60 @@ public class GenericApiSteps {
         System.out.println("🚀 [v3] DELETE a: " + finalEndpoint + " | Status: " + response.statusCode());
         registrarEnSerenity("DELETE v3 " + finalEndpoint, "ID: " + GenericApiSteps.currentInvitationId, "Status: " + response.statusCode());
     }
+
+    // Cambiamos <metodo> por {word} para que Cucumber lea POST, GET, etc.
+    @When("v3 envío una petición {word} a {string} con autorización")
+    public void v3EnvioPeticionSeguridadSenior(String metodo, String endpoint) throws Exception {
+        String cleanToken = GenericApiSteps.accessToken.replace("\"", "");
+        String urlCompleta = BASE_URL + endpoint;
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(urlCompleta))
+                .header("Authorization", "Bearer " + cleanToken)
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json");
+
+        // Definición dinámica del verbo
+        switch (metodo.toUpperCase()) {
+            case "GET"    -> builder.GET();
+            case "POST"   -> builder.POST(HttpRequest.BodyPublishers.ofString("{}"));
+            case "PUT"    -> builder.PUT(HttpRequest.BodyPublishers.ofString("{}"));
+            case "DELETE" -> builder.DELETE();
+            default       -> throw new IllegalArgumentException("Verbo HTTP no soportado: " + metodo);
+        }
+
+        this.response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+        // LOG DE AUDITORÍA SENIOR
+        if (response.statusCode() == 404) {
+            System.err.println("⚠️ ALERTA: El endpoint " + endpoint + " devolvió 404. Revisa si el path es correcto o el ID existe.");
+        } else {
+            System.out.println("✅ SEGURIDAD: " + metodo + " " + endpoint + " -> STATUS: " + response.statusCode());
+        }
+    }
+
+    @Then("v3 el código de estado debe ser {int}")
+    public void v3VerificarCodigoEstado(String expectedStatus) {
+        int actualStatus = response.statusCode();
+        assertEquals(expectedStatus, actualStatus, "El código de estado HTTP no coincide con la política de seguridad establecida.");
+    }
+
+    @Then("el código de estado debe serlo {int}")
+    public void v3VerificarCodigoEstado(int expectedStatus) {
+        int actualStatus = response.statusCode();
+
+        // Log para ver qué está pasando en la consola de Maven
+        System.out.println("🔍 Validando seguridad: Esperado [" + expectedStatus + "] | Recibido [" + actualStatus + "]");
+
+        if (actualStatus != expectedStatus) {
+            System.out.println("⚠️ Cuerpo de la respuesta: " + response.body());
+        }
+
+        // Aserción dinámica: ahora sí aceptará el 403
+        org.junit.jupiter.api.Assertions.assertEquals(
+                expectedStatus,
+                actualStatus,
+                "El código de estado no es el esperado para esta política de acceso."
+        );
+    }
 }

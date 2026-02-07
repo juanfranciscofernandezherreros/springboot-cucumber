@@ -75,7 +75,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/admin/audit").hasRole("ADMIN")
                         // 4. 🔒 ADMIN AREA
-                        .requestMatchers("/api/v1cleardmin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // 🔐 RESET PASSWORD: USER y ADMIN
                         .requestMatchers(HttpMethod.POST, "/auth/reset-password")
                         .hasAnyRole("USER", "ADMIN")
