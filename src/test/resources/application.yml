@@ -1,6 +1,9 @@
 server:
   port: 8087
-
+telegram:
+  bot:
+    token: 8131791099:AAFO_FTl3hLpQXDJJyU01_KgmaeCoPL9oNw
+    chat-id: 407537798
 application:
   security:
     redis-enabled: false
