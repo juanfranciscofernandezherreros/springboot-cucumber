@@ -36,6 +36,7 @@ public class AuthService {
     private static final int MAX_FAILED_ATTEMPTS = 3;
     private final IpLockService ipLockService;
     private final RoleRepository roleRepository;
+    private final TelegramService telegramService;
 
     private long getLockDuration(int lockCount) {
         return switch (lockCount) {
@@ -111,9 +112,15 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
+        // 📣 Notificación a Telegram
+        telegramService.sendMessage(
+                "<b>Nuevo usuario registrado</b>\n"
+                        + "👤 Nombre: " + request.name() + "\n"
+                        + "📧 Email: " + request.email() + "\n"
+                        + "🌍 IP: " + clientIp
+        );
     }
-
-
 
     @Transactional
     public void registerByAdmin(AdminCreateUserRequest request) {

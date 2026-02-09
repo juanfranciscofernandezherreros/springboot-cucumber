@@ -11,12 +11,14 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Slf4j
 @SpringBootApplication
 @EnableJpaAuditing
 @EnableJpaRepositories
+@EnableAsync
 public class Main {
 
     public static void main(String[] args) {
@@ -27,7 +29,7 @@ public class Main {
     public CommandLineRunner initData(
             UserRepository userRepository,
             RoleRepository roleRepository,
-            InvitationRepository invitationRepository, // Agregado para las invitaciones
+            InvitationRepository invitationRepository,
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
