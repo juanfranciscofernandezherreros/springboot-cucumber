@@ -18,7 +18,7 @@ Feature: Gestión de usuarios v2
       """
       {
         "name": "Nuevo Usuario",
-        "email": "nuevo@test.com",
+        "email": "jnfz92@gmail.com",
         "password": "password123",
         "role": "USER"
       }

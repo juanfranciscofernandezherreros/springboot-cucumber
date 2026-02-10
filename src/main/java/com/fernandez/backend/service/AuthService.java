@@ -37,6 +37,7 @@ public class AuthService {
     private final IpLockService ipLockService;
     private final RoleRepository roleRepository;
     private final TelegramService telegramService;
+    private final EmailService emailService;
 
     private long getLockDuration(int lockCount) {
         return switch (lockCount) {
@@ -112,6 +113,15 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
+
+        // 📧 Email de bienvenida (ASYNC)
+        emailService.sendEmail(
+                user.getEmail(),
+                "Bienvenido a la plataforma",
+                "Hola " + user.getName() + ",\n\n"
+                        + "Tu registro se ha completado correctamente.\n\n"
+                        + "¡Bienvenido!"
+        );
 
         // 📣 Notificación a Telegram
         telegramService.sendMessage(
