@@ -73,6 +73,20 @@ Feature: Gestión Extendida de Usuarios para Administradores
     # Validamos 201 porque el controlador devuelve HttpStatus.CREATED
     Then v2 el código de estado debe ser 201
 
+  @error_handling
+  Scenario: Intentar crear un usuario que ya existe desde el panel de aministracion
+    # Intentamos crear a user2@test.com, que ya existe en el Initializer
+    When v2 envío una petición POST a "/api/v1/admin/create-user" con el cuerpo:
+      """
+      {
+        "name": "Usuario Duplicado",
+        "email": "user2@test.com",
+        "password": "password123",
+        "role": "USER"
+      }
+      """
+    Then v2 el código de estado debe ser 400
+
   Scenario: Listar todos los usuarios del sistema
     # GET /api/v1/admin/users
     When v2 envío una petición GET a "/api/v1/admin/users" con autorización

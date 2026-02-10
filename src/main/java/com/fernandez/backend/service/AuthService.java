@@ -141,10 +141,16 @@ public class AuthService {
 
     @Transactional
     public void registerByAdmin(AdminCreateUserRequest request) {
+        // 1. Verificar si el email ya está registrado
+        if (userRepository.existsByEmail(request.email())) {
+            throw new UserAlreadyExistsException("El usuario con email " + request.email() + " ya existe");
+        }
 
+        // 2. Buscar el rol
         Role role = roleRepository.findByName(request.role().toUpperCase())
                 .orElseThrow(() -> new RuntimeException("Rol no válido"));
 
+        // 3. Construir y guardar
         var user = User.builder()
                 .name(request.name())
                 .email(request.email())
@@ -156,7 +162,6 @@ public class AuthService {
                 .build();
 
         userRepository.save(user);
-
         log.info("ADMIN creó usuario {} con rol {}", request.email(), role.getName());
     }
 
