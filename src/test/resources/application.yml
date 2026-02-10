@@ -6,6 +6,8 @@ telegram:
     chat-id: 407537798
 application:
   security:
+    send-data-telegram-enabled: false
+    send-data-email-enabled: true
     redis-enabled: false
     ip-lock:
       enabled: false
@@ -21,7 +23,7 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: xxxx@gmail.com
+    username: juanfraniscofernandezherreros@gmail.com
     password: whhi xtgn ckdi ttjt
     properties:
       mail:

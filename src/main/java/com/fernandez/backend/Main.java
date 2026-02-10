@@ -2,6 +2,7 @@ package com.fernandez.backend;
 
 import com.fernandez.backend.config.UserDataInitializer;
 import com.fernandez.backend.repository.InvitationRepository;
+import com.fernandez.backend.repository.PrivilegeRepository;
 import com.fernandez.backend.repository.RoleRepository;
 import com.fernandez.backend.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class Main {
             UserRepository userRepository,
             RoleRepository roleRepository,
             InvitationRepository invitationRepository,
+            PrivilegeRepository privilegeRepository,
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
@@ -40,6 +42,7 @@ public class Main {
                     userRepository,
                     roleRepository,
                     invitationRepository,
+                    privilegeRepository,
                     passwordEncoder
             );
 

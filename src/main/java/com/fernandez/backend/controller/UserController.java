@@ -18,6 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(UserEndpoints.BASE)
 @RequiredArgsConstructor
+@PreAuthorize("hasRole('USER')")
 public class UserController {
 
     private final UserService userService;

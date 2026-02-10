@@ -1,5 +1,6 @@
 package com.fernandez.backend.service;
 
+import com.fernandez.backend.config.SecurityNotificationProperties;
 import com.fernandez.backend.dto.*;
 import com.fernandez.backend.exceptions.*;
 import com.fernandez.backend.model.Role;
@@ -38,6 +39,8 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final TelegramService telegramService;
     private final EmailService emailService;
+    private final SecurityNotificationProperties notificationProperties;
+
 
     private long getLockDuration(int lockCount) {
         return switch (lockCount) {
@@ -114,22 +117,26 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // 📧 Email de bienvenida (ASYNC)
-        emailService.sendEmail(
-                user.getEmail(),
-                "Bienvenido a la plataforma",
-                "Hola " + user.getName() + ",\n\n"
-                        + "Tu registro se ha completado correctamente.\n\n"
-                        + "¡Bienvenido!"
-        );
+        // 📧 Email de bienvenida
+        if (notificationProperties.isSendDataEmailEnabled()) {
+            emailService.sendEmail(
+                    user.getEmail(),
+                    "Bienvenido a la plataforma",
+                    "Hola " + user.getName() + ",\n\n"
+                            + "Tu registro se ha completado correctamente.\n\n"
+                            + "¡Bienvenido!"
+            );
+        }
 
-        // 📣 Notificación a Telegram
-        telegramService.sendMessage(
-                "<b>Nuevo usuario registrado</b>\n"
-                        + "👤 Nombre: " + request.name() + "\n"
-                        + "📧 Email: " + request.email() + "\n"
-                        + "🌍 IP: " + clientIp
-        );
+        // 📣 Telegram
+        if (notificationProperties.isSendDataTelegramEnabled()) {
+            telegramService.sendMessage(
+                    "<b>Nuevo usuario registrado</b>\n"
+                            + "👤 Nombre: " + request.name() + "\n"
+                            + "📧 Email: " + request.email() + "\n"
+                            + "🌍 IP: " + clientIp
+            );
+        }
     }
 
     @Transactional

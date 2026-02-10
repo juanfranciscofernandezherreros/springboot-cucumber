@@ -1,6 +1,7 @@
 package com.fernandez.backend.config;
 
 import com.fernandez.backend.repository.InvitationRepository;
+import com.fernandez.backend.repository.PrivilegeRepository;
 import com.fernandez.backend.repository.RoleRepository;
 import com.fernandez.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,16 +18,17 @@ public class TestUsersInitializer implements ApplicationRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final InvitationRepository invitationRepository; // Añadir esto
+    private final PrivilegeRepository privilegeRepository;
+    private final InvitationRepository invitationRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(ApplicationArguments args) {
-        // Ahora pasamos los 4 argumentos requeridos
         UserDataInitializer.init(
                 userRepository,
                 roleRepository,
                 invitationRepository,
+                privilegeRepository,
                 passwordEncoder
         );
     }

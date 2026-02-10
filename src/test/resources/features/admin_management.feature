@@ -65,7 +65,7 @@ Feature: Gestión Extendida de Usuarios para Administradores
       """
       {
         "name": "Nuevo Usuario Admin",
-        "email": "admin_created@test.com",
+        "email": "admin_created_new@test.com",
         "password": "password123",
         "role": "USER"
       }

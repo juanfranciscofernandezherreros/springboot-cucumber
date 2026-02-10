@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Data
 @Builder
@@ -62,9 +63,22 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
-                .toList();
+        // 1. Extraemos los nombres de los roles (asegurando el prefijo ROLE_)
+        Set<GrantedAuthority> authorities = roles.stream()
+                .map(role -> new SimpleGrantedAuthority(
+                        role.getName().startsWith("ROLE_") ? role.getName() : "ROLE_" + role.getName()
+                ))
+                .collect(Collectors.toSet());
+        // 2. Extraemos y añadimos los privilegios de cada uno de esos roles
+        roles.forEach(role -> {
+            if (role.getPrivileges() != null) {
+                role.getPrivileges().forEach(privilege -> {
+                    authorities.add(new SimpleGrantedAuthority(privilege.getName()));
+                });
+            }
+        });
+
+        return authorities;
     }
 
     @Override
