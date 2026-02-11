@@ -1,6 +1,6 @@
 package com.fernandez.backend.utils.constants;
 
-public final class InvitationConstants {
+public final class InvitationsApiPaths {
 
     // =========================
     // BASE PATHS
@@ -19,7 +19,7 @@ public final class InvitationConstants {
     // =========================
     public static final int INVITATION_EXPIRATION_HOURS = 48;
 
-    private InvitationConstants() {
+    private InvitationsApiPaths() {
         // evita instanciación
     }
 }

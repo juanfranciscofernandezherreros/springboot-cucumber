@@ -12,13 +12,17 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe contener un token JWT
 
-  Scenario: Ciclo de gestión: Bloquear, Desbloquear y Cambiar Rol
+  # =============================================================
+  # CICLO DE VIDA Y ESTADOS
+  # =============================================================
+
+  Scenario: 01 - Ciclo de gestión: Bloquear, Desbloquear y Cambiar Rol
     # 1. Bloquear usuario
     When v2 envío una petición POST a "/api/v1/admin/lock-user/user2@test.com" con autorización
     Then v2 el código de estado debe ser 200
     And v2 la respuesta contiene "bloqueado correctamente"
 
-    # 2. Verificar que aparece en la lista de bloqueados
+    # 2. Verificar que aparece en la lista de bloqueados (GET directo, sin wrapper)
     When v2 envío una petición GET a "/api/v1/admin/locked-users" con autorización
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe ser una lista que contiene el email "user2@test.com"
@@ -39,12 +43,16 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Then v2 el código de estado debe ser 200
     And v2 la respuesta contiene "actualizado a MANAGER"
 
-  Scenario: Actualizar datos de usuario y eliminar
-    # 1. Obtenemos el ID de user2 para poder borrarlo/editarlo
+  # =============================================================
+  # MODIFICACIÓN Y ELIMINACIÓN
+  # =============================================================
+
+  Scenario: 02 - Actualizar datos de usuario y eliminar
+    # 1. Obtenemos el ID de user3 (GET directo)
     When v2 envío una petición GET a "/api/v1/admin/user-status?email=user3@test.com" con autorización
     And v2 capturo el ID de la invitación de la respuesta
 
-    # 2. Editar usuario por ID
+    # 2. Editar usuario por ID (Devuelve AdminActionResponse)
     When v2 envío una petición PUT a "/api/v1/admin/update-user/{id}" con el cuerpo:
       """
       {
@@ -59,8 +67,12 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Then v2 el código de estado debe ser 200
     And v2 la respuesta contiene "eliminado correctamente"
 
-  Scenario: Crear un nuevo usuario desde el panel de administración
-    # POST /api/v1/admin/create-user
+  # =============================================================
+  # CREACIÓN Y ERRORES
+  # =============================================================
+
+  Scenario: 03 - Crear un nuevo usuario desde el panel de administración
+    # POST /api/v1/admin/create-user (Devuelve AdminActionResponse + 201)
     When v2 envío una petición POST a "/api/v1/admin/create-user" con el cuerpo:
       """
       {
@@ -70,12 +82,12 @@ Feature: Gestión Extendida de Usuarios para Administradores
         "role": "USER"
       }
       """
-    # Validamos 201 porque el controlador devuelve HttpStatus.CREATED
     Then v2 el código de estado debe ser 201
+    And v2 la respuesta contiene "admin_created_new@test.com"
 
   @error_handling
-  Scenario: Intentar crear un usuario que ya existe desde el panel de aministracion
-    # Intentamos crear a user2@test.com, que ya existe en el Initializer
+  Scenario: 04 - Intentar crear un usuario que ya existe desde el panel de administración
+    # Debe lanzar la UserAlreadyExistsException (400 Bad Request)
     When v2 envío una petición POST a "/api/v1/admin/create-user" con el cuerpo:
       """
       {
@@ -87,15 +99,17 @@ Feature: Gestión Extendida de Usuarios para Administradores
       """
     Then v2 el código de estado debe ser 400
 
-  Scenario: Listar todos los usuarios del sistema
-    # GET /api/v1/admin/users
+  # =============================================================
+  # CONSULTAS GLOBALES
+  # =============================================================
+
+  Scenario: 05 - Listar todos los usuarios del sistema
     When v2 envío una petición GET a "/api/v1/admin/users" con autorización
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe ser una lista con elementos
     And v2 la respuesta debe ser una lista que contiene el email "admin_created@test.com"
 
   @stats
-  Scenario: Obtener estadísticas globales de usuarios
-    # GET /api/v1/admin/stats
+  Scenario: 06 - Obtener estadísticas globales de usuarios
     When v2 envío una petición GET a "/api/v1/admin/stats" con autorización
     Then v2 el código de estado debe ser 200

@@ -1,8 +1,8 @@
 package com.fernandez.backend.utils.constants;
 
-public final class UserEndpoints {
+public final class UserApiPaths {
 
-    private UserEndpoints() {
+    private UserApiPaths() {
         // Evita instanciación
     }
 

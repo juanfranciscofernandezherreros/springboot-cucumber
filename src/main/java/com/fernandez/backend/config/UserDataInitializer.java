@@ -34,7 +34,8 @@ public class UserDataInitializer {
         // --- 2. ROLES ---
         Role adminRole = createRoleWithPrivileges(roleRepository, "ADMIN",
                 Set.of(view4k, viewHd, download, upload, accessJava, adminRead, adminUpdate, adminDelete, adminCreate));
-
+        Role limitedAdminRole = createRoleWithPrivileges(roleRepository, "LIMITED_ADMIN",
+                Set.of(viewHd, adminRead, adminUpdate, adminCreate));
         // Creamos el rol MANAGER (requerido por tu test de actualización de rol)
         Role managerRole = createRoleWithPrivileges(roleRepository, "MANAGER",
                 Set.of(viewHd, adminRead, adminUpdate));
@@ -63,7 +64,7 @@ public class UserDataInitializer {
         // Otros usuarios base
         createUser(userRepository, passwordEncoder, "premium@test.com", "Juan Premium", "user123", Set.of(premiumRole), false);
         createUser(userRepository, passwordEncoder, "alumno@test.com", "Pedro Java", "user123", Set.of(userRole), false);
-
+        createUser(userRepository, passwordEncoder, "limited-admin@test.com", "Admin Limitado", "admin123", Set.of(limitedAdminRole), false);
         // --- 4. INVITACIONES ---
         createInvitation(invitationRepository, "invitado@test.com", "Nuevo Cinefilo", "Interesado en catálogo de terror", InvitationStatus.PENDING);
         // Invitación para user3 (para que el test pueda capturar el ID si lo necesitas desde ahí)

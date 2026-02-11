@@ -1,9 +1,9 @@
 package com.fernandez.backend.utils.constants;
 
 
-public final class AuthEndpoints {
+public final class AuthApiPaths {
 
-    private AuthEndpoints() {
+    private AuthApiPaths() {
         // Evita instanciación
     }
 

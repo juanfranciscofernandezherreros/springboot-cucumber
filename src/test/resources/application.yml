@@ -1,3 +1,17 @@
+app:
+  security:
+    lock:
+      durations:
+        1: 60000    # 1 minuto
+        2: 120000   # 2 minutos
+        3: 180000   # 3 minutos
+  admin:
+    messages:
+      user-locked: "Usuario %s ha sido bloqueado correctamente."
+      user-unlocked: "Usuario %s ha sido desbloqueado correctamente."
+      role-updated: "Rol de %s actualizado a %s"
+      user-deleted: "Usuario con id %d eliminado correctamente."
+      user-created: "Usuario %s creado correctamente"
 server:
   port: 8087
 telegram:
@@ -7,7 +21,7 @@ telegram:
 application:
   security:
     send-data-telegram-enabled: false
-    send-data-email-enabled: true
+    send-data-email-enabled: false
     redis-enabled: false
     ip-lock:
       enabled: false
@@ -23,7 +37,7 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: juanfraniscofernandezherreros@gmail.com
+    username: xxxx@gmail.com
     password: whhi xtgn ckdi ttjt
     properties:
       mail:

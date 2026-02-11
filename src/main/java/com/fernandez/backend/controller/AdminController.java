@@ -1,9 +1,7 @@
 package com.fernandez.backend.controller;
 
-import com.fernandez.backend.dto.AdminCreateUserRequest;
-import com.fernandez.backend.dto.AdminUpdateUserRequest;
-import com.fernandez.backend.dto.AdminUserListResponse;
-import com.fernandez.backend.dto.UserStatsResponse;
+import com.fernandez.backend.config.AdminMessagesProperties;
+import com.fernandez.backend.dto.*;
 import com.fernandez.backend.service.AuthService;
 import com.fernandez.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -18,48 +16,57 @@ import java.util.Map;
 import static com.fernandez.backend.utils.constants.AdminApiPaths.*;
 
 @RestController
-@RequestMapping(BASE) // /api/v1/admin
+@RequestMapping(BASE)
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
     private final UserService userService;
     private final AuthService authService;
+    private final AdminMessagesProperties msg;
 
     // =====================================================
     // CREATE (admin:create)
     // =====================================================
-    @PostMapping(CREATE_USER) // /create-user
+    @PostMapping(CREATE_USER)
     @PreAuthorize("hasAuthority('admin:create')")
-    public ResponseEntity<Void> createUserFromPanel(
+    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> createUserFromPanel(
             @RequestBody AdminCreateUserRequest request
     ) {
-        authService.registerByAdmin(request);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        AdminUserListResponse newUser = authService.registerByAdmin(request);
+
+        String template = msg.getUserCreated();
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(
+                AdminActionResponse.<AdminUserListResponse>builder()
+                        .mensaje(String.format(template, request.email()))
+                        .data(newUser)
+                        .build()
+        );
     }
 
     // =====================================================
     // READ (admin:read)
     // =====================================================
-    @GetMapping(USERS) // /users
+    @GetMapping(USERS)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<AdminUserListResponse>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping(LOCKED_USERS) // /locked-users
+    @GetMapping(LOCKED_USERS)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<AdminUserListResponse>> getLockedUsers() {
         return ResponseEntity.ok(userService.getLockedUsers());
     }
 
-    @GetMapping(USER_STATUS) // /user-status
+    @GetMapping(USER_STATUS)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<AdminUserListResponse> getUserStatus(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserStatus(email));
     }
 
-    @GetMapping(STATS) // /stats
+    @GetMapping(STATS)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<UserStatsResponse> getUserStats() {
         return ResponseEntity.ok(userService.getUserStatistics());
@@ -68,46 +75,81 @@ public class AdminController {
     // =====================================================
     // UPDATE (admin:update)
     // =====================================================
-    @PostMapping(LOCK_USER + "/{email}") // /lock-user/{email}
+    @PostMapping(LOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<Map<String, String>> lockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> lockUser(@PathVariable String email) {
         userService.lockUser(email);
-        return ResponseEntity.ok(Map.of("mensaje", "Usuario " + email + " ha sido bloqueado correctamente."));
+        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+
+        return ResponseEntity.ok(
+                AdminActionResponse.<AdminUserListResponse>builder()
+                        .mensaje(String.format(msg.getUserLocked(), email))
+                        .data(updatedUser)
+                        .build()
+        );
     }
 
-    @PostMapping(UNLOCK_USER + "/{email}") // /unlock/{email}
+    @PostMapping(UNLOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<Map<String, String>> unLockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> unLockUser(@PathVariable String email) {
         userService.unlockUser(email);
-        return ResponseEntity.ok(Map.of("mensaje", "Usuario " + email + " ha sido desbloqueado correctamente."));
+        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+
+        return ResponseEntity.ok(
+                AdminActionResponse.<AdminUserListResponse>builder()
+                        .mensaje(String.format(msg.getUserUnlocked(), email))
+                        .data(updatedUser)
+                        .build()
+        );
     }
 
-    @PutMapping(UPDATE_ROLE) // /update-role
+    @PutMapping(UPDATE_ROLE)
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<Map<String, String>> updateRole(@RequestBody Map<String, String> request) {
+    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> updateRole(
+            @RequestBody Map<String, String> request
+    ) {
         String email = request.get("email");
         String roleName = request.get("role").toUpperCase();
         userService.updateUserRole(email, roleName);
-        return ResponseEntity.ok(Map.of("mensaje", "Rol de " + email + " actualizado a " + roleName));
+        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+
+        return ResponseEntity.ok(
+                AdminActionResponse.<AdminUserListResponse>builder()
+                        .mensaje(String.format(msg.getRoleUpdated(), email, roleName))
+                        .data(updatedUser)
+                        .build()
+        );
     }
 
-    @PutMapping(UPDATE_USER + "/{id}") // /update-user/{id}
+    @PutMapping(UPDATE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminUserListResponse> updateUser(
+    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> updateUser(
             @PathVariable Long id,
             @RequestBody AdminUpdateUserRequest request
     ) {
         AdminUserListResponse response = userService.updateUserByAdmin(id, request);
-        return ResponseEntity.ok(response);
+
+        return ResponseEntity.ok(
+                AdminActionResponse.<AdminUserListResponse>builder()
+                        .mensaje("Usuario actualizado correctamente") // Puedes añadirlo a Properties
+                        .data(response)
+                        .build()
+        );
     }
 
     // =====================================================
     // DELETE (admin:delete)
     // =====================================================
-    @DeleteMapping(DELETE_USER + "/{id}") // /delete/{id}
+    @DeleteMapping(DELETE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:delete')")
-    public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<AdminActionResponse<Long>> deleteUser(@PathVariable Long id) {
         userService.deleteUserById(id);
-        return ResponseEntity.ok(Map.of("mensaje", "Usuario con id " + id + " eliminado correctamente."));
+
+        return ResponseEntity.ok(
+                AdminActionResponse.<Long>builder()
+                        .mensaje(String.format(msg.getUserDeleted(), id))
+                        .data(id)
+                        .build()
+        );
     }
 }

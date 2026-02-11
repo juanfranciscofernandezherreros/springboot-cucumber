@@ -1,3 +1,17 @@
+app:
+  security:
+    lock:
+      durations:
+        1: 60000    # 1 minuto
+        2: 120000   # 2 minutos
+        3: 180000   # 3 minutos
+  admin:
+    messages:
+      user-locked: "Usuario %s ha sido bloqueado correctamente."
+      user-unlocked: "Usuario %s ha sido desbloqueado correctamente."
+      role-updated: "Rol de %s actualizado a %s"
+      user-deleted: "Usuario con id %d eliminado correctamente."
+      user-created: "Usuario %s creado correctamente"
 server:
   port: 8087
 telegram:

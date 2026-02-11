@@ -1,5 +1,6 @@
 package com.fernandez.backend.service;
 
+import com.fernandez.backend.config.SecurityLockProperties;
 import com.fernandez.backend.config.SecurityNotificationProperties;
 import com.fernandez.backend.dto.*;
 import com.fernandez.backend.exceptions.*;
@@ -24,6 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Date;
 import java.util.Set;
 
+import static com.fernandez.backend.utils.constants.AuthServiceConstants.*;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,76 +37,32 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private static final int MAX_FAILED_ATTEMPTS = 3;
     private final IpLockService ipLockService;
     private final RoleRepository roleRepository;
     private final TelegramService telegramService;
     private final EmailService emailService;
     private final SecurityNotificationProperties notificationProperties;
+    private final SecurityLockProperties lockProperties;
 
+    private static final int MAX_FAILED_ATTEMPTS = 3;
 
     private long getLockDuration(int lockCount) {
-        return switch (lockCount) {
-            case 1 -> 1 * 60 * 1000;
-            case 2 -> 2 * 60 * 1000;
-            case 3 -> 3 * 60 * 1000;
-            default -> -1L;
-        };
-    }
-
-    /* ===================== REGISTRO ===================== */
-
-    @Transactional
-    public void register(RegisterRequest request, String clientIp) {
-
-        if (ipLockService.isIpBlocked(clientIp)) {
-            throw new IpBlockedException();
-        }
-
-        Role userRole = roleRepository.findByName(request.role())
-                .orElseThrow(() -> new RuntimeException("Rol USER no existe"));
-
-        var user = User.builder()
-                .name(request.name())
-                .email(request.email())
-                .password(passwordEncoder.encode(request.password()))
-                .roles(Set.of(userRole))
-                .accountNonLocked(true)
-                .failedAttempt(0)
-                .lockCount(0)
-                .build();
-
-        userRepository.save(user);
+        return lockProperties.getDurations().getOrDefault(lockCount, -1L);
     }
 
     @Transactional
     public void registerPublic(RegisterRequest request, String clientIp) {
-
-        if (ipLockService.isIpBlocked(clientIp)) {
-            throw new IpBlockedException();
-        }
+        if (ipLockService.isIpBlocked(clientIp)) throw new IpBlockedException();
 
         if (request.role() != null) {
-
-            if ("ADMIN".equalsIgnoreCase(request.role())) {
-                throw new ForbiddenRoleException(
-                        "No está permitido registrar usuarios ADMIN"
-                );
-            }
-
-            if (!"USER".equalsIgnoreCase(request.role())) {
-                throw new InvalidRoleException(
-                        "Rol no válido para el registro"
-                );
-            }
+            if (ROLE_ADMIN.equalsIgnoreCase(request.role())) throw new ForbiddenRoleException(ERR_FORBIDDEN_ADMIN_REG);
+            if (!ROLE_USER.equalsIgnoreCase(request.role())) throw new InvalidRoleException(ERR_INVALID_REG_ROLE);
         }
 
-        if (userRepository.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException("El email ya existe");
-        }
+        if (userRepository.existsByEmail(request.email())) throw new EmailAlreadyExistsException(ERR_EMAIL_EXISTS);
 
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new IllegalStateException("Rol USER no existe"));
+        Role userRole = roleRepository.findByName(ROLE_USER)
+                .orElseThrow(() -> new IllegalStateException(String.format(ERR_ROLE_NOT_FOUND, ROLE_USER)));
 
         User user = User.builder()
                 .name(request.name())
@@ -117,40 +76,24 @@ public class AuthService {
 
         userRepository.save(user);
 
-        // 📧 Email de bienvenida
         if (notificationProperties.isSendDataEmailEnabled()) {
-            emailService.sendEmail(
-                    user.getEmail(),
-                    "Bienvenido a la plataforma",
-                    "Hola " + user.getName() + ",\n\n"
-                            + "Tu registro se ha completado correctamente.\n\n"
-                            + "¡Bienvenido!"
-            );
+            emailService.sendEmail(user.getEmail(), EMAIL_SUBJECT_WELCOME, String.format(EMAIL_BODY_WELCOME, user.getName()));
         }
 
-        // 📣 Telegram
         if (notificationProperties.isSendDataTelegramEnabled()) {
-            telegramService.sendMessage(
-                    "<b>Nuevo usuario registrado</b>\n"
-                            + "👤 Nombre: " + request.name() + "\n"
-                            + "📧 Email: " + request.email() + "\n"
-                            + "🌍 IP: " + clientIp
-            );
+            telegramService.sendMessage(String.format(TELEGRAM_MSG_NEW_USER, request.name(), request.email(), clientIp));
         }
     }
 
     @Transactional
-    public void registerByAdmin(AdminCreateUserRequest request) {
-        // 1. Verificar si el email ya está registrado
+    public AdminUserListResponse registerByAdmin(AdminCreateUserRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new UserAlreadyExistsException("El usuario con email " + request.email() + " ya existe");
+            throw new UserAlreadyExistsException(String.format(ERR_USER_ALREADY_EXISTS, request.email()));
         }
 
-        // 2. Buscar el rol
         Role role = roleRepository.findByName(request.role().toUpperCase())
-                .orElseThrow(() -> new RuntimeException("Rol no válido"));
+                .orElseThrow(() -> new RuntimeException(String.format(ERR_ROLE_NOT_FOUND, request.role())));
 
-        // 3. Construir y guardar
         var user = User.builder()
                 .name(request.name())
                 .email(request.email())
@@ -161,55 +104,42 @@ public class AuthService {
                 .lockCount(0)
                 .build();
 
-        userRepository.save(user);
-        log.info("ADMIN creó usuario {} con rol {}", request.email(), role.getName());
+        User savedUser = userRepository.save(user);
+        log.info(LOG_ADMIN_CREATED_USER, request.email(), role.getName());
+
+        return mapToAdminUserListResponse(savedUser);
     }
 
-
-    /* ===================== LOGIN ===================== */
-
     public TokenResponse login(LoginRequest request, String clientIp) {
-
-        if (ipLockService.isIpBlocked(clientIp)) {
-            throw new IpBlockedException();
-        }
+        if (ipLockService.isIpBlocked(clientIp)) throw new IpBlockedException();
 
         var user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
                     ipLockService.registerFailedAttempt(clientIp);
-                    return new BadCredentialsException("Credenciales inválidas");
+                    return new BadCredentialsException(ERR_BAD_CREDENTIALS);
                 });
 
         if (!user.isAccountNonLocked()) {
             long duration = getLockDuration(user.getLockCount());
-            if (duration == -1L) {
-                throw new LockedException("Cuenta bloqueada permanentemente. Contacte con soporte.");
-            }
+            if (duration == -1L) throw new LockedException(ERR_ACCOUNT_LOCKED_PERM);
 
             if (shouldUnlock(user)) {
                 unlockUser(user);
             } else {
                 long timeLeft = (user.getLockTime().getTime() + duration) - System.currentTimeMillis();
-                throw new LockedException("Cuenta bloqueada. Inténtelo en " + (timeLeft / 1000) + " segundos.");
+                throw new LockedException(String.format(ERR_ACCOUNT_LOCKED_TEMP, timeLeft / 1000));
             }
         }
 
         try {
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
-            );
-
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
             resetAllAttempts(user);
-
             var accessToken = jwtService.generateToken(user);
             var refreshToken = jwtService.generateRefreshToken(user);
-
-            revokeAllUserTokens(user);
+            revokeAllUserTokens(user.getId());
             saveUserToken(user, accessToken);
             saveUserToken(user, refreshToken);
-
             return new TokenResponse(accessToken, refreshToken);
-
         } catch (BadCredentialsException e) {
             updateFailedAttempts(request.email());
             ipLockService.registerFailedAttempt(clientIp);
@@ -217,18 +147,46 @@ public class AuthService {
         }
     }
 
-    /* ===================== MÉTODOS PRIVADOS ===================== */
-
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateFailedAttempts(String email) {
-        userRepository.findByEmail(email).ifPresent(this::processFailedAttempt);
-    }
-
     @Transactional
-    public void unlockUser(User user) {
-        user.setAccountNonLocked(true);
-        user.setFailedAttempt(0);
-        userRepository.save(user);
+    public TokenResponse refreshToken(String authHeader) {
+        // 1. Validación básica del header
+        if (authHeader == null || !authHeader.startsWith(TOKEN_PREFIX)) {
+            return null;
+        }
+
+        final String refreshToken = authHeader.substring(TOKEN_PREFIX.length());
+        final String userEmail = jwtService.extractUsername(refreshToken);
+
+        if (userEmail != null) {
+            var user = userRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+
+            // 2. Verificar que el token existe en la DB y es válido
+            var storedToken = tokenRepository.findByToken(refreshToken)
+                    .orElse(null);
+
+            if (storedToken != null && !storedToken.isExpired() && !storedToken.isRevoked()
+                    && jwtService.isTokenValid(refreshToken, user)) {
+
+                // 3. TOKEN ROTATION: Revocamos todos los anteriores para mayor seguridad
+                revokeAllUserTokens(user.getId());
+
+                // 4. Generamos el nuevo par (Access + Refresh)
+                String accessToken = jwtService.generateToken(user);
+                String newRefreshToken = jwtService.generateRefreshToken(user);
+
+                // 5. Persistimos los nuevos tokens
+                saveUserToken(user, accessToken);
+                saveUserToken(user, newRefreshToken);
+
+                log.info("🔄 Token renovado con éxito para el usuario: {}", userEmail);
+
+                return new TokenResponse(accessToken, newRefreshToken);
+            }
+        }
+
+        log.warn("⚠️ Intento de refresh token fallido o token inválido");
+        return null;
     }
 
     private void processFailedAttempt(User user) {
@@ -240,17 +198,67 @@ public class AuthService {
             user.setLockTime(new Date());
             user.setLockCount(user.getLockCount() + 1);
             user.setFailedAttempt(0);
-            log.warn("Usuario {} bloqueado (nivel {})", user.getEmail(), user.getLockCount());
+            log.warn(LOG_USER_LOCKED, user.getEmail(), user.getLockCount());
         }
-
         userRepository.saveAndFlush(user);
+    }
+
+    @Transactional
+    public void logout(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith(TOKEN_PREFIX)) return;
+
+        tokenRepository.findByToken(authHeader.substring(7)).ifPresent(token -> {
+            token.setExpired(true);
+            token.setRevoked(true);
+            tokenRepository.save(token);
+            SecurityContextHolder.clearContext();
+            log.info(LOG_LOGOUT);
+        });
+    }
+
+    @Transactional
+    public TokenResponse resetPasswordFromProfile(String email, String newPassword) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+        user.setPassword(passwordEncoder.encode(newPassword));
+        revokeAllUserTokens(user.getId());
+        resetAllAttempts(user);
+
+        String accessToken = jwtService.generateToken(user);
+        String refreshToken = jwtService.generateRefreshToken(user);
+        saveUserToken(user, accessToken);
+        saveUserToken(user, refreshToken);
+
+        userRepository.save(user);
+        log.info(LOG_PASSWORD_UPDATED, email);
+        return new TokenResponse(accessToken, refreshToken);
+    }
+
+    private AdminUserListResponse mapToAdminUserListResponse(User user) {
+        return AdminUserListResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .roles(user.getRoles().stream().map(Role::getName).toList())
+                .accountNonLocked(user.isAccountNonLocked())
+                .failedAttempt(user.getFailedAttempt())
+                .build();
+    }
+
+    // --- Métodos de apoyo ---
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void updateFailedAttempts(String email) { userRepository.findByEmail(email).ifPresent(this::processFailedAttempt); }
+
+    @Transactional
+    public void unlockUser(User user) {
+        user.setAccountNonLocked(true);
+        user.setFailedAttempt(0);
+        userRepository.save(user);
     }
 
     private boolean shouldUnlock(User user) {
         if (user.getLockTime() == null) return true;
         long duration = getLockDuration(user.getLockCount());
-        if (duration == -1L) return false;
-        return user.getLockTime().getTime() + duration < System.currentTimeMillis();
+        return duration != -1L && user.getLockTime().getTime() + duration < System.currentTimeMillis();
     }
 
     private void resetAllAttempts(User user) {
@@ -262,104 +270,12 @@ public class AuthService {
     }
 
     private void saveUserToken(User user, String jwtToken) {
-        var token = Token.builder()
-                .user(user)
-                .token(jwtToken)
-                .tokenType(Token.TokenType.BEARER)
-                .expired(false)
-                .revoked(false)
-                .build();
-        tokenRepository.save(token);
+        tokenRepository.save(Token.builder().user(user).token(jwtToken).tokenType(Token.TokenType.BEARER).expired(false).revoked(false).build());
     }
 
-    private void revokeAllUserTokens(User user) {
-        var tokens = tokenRepository.findAllValidTokenByUser(user.getId());
-        tokens.forEach(token -> {
-            token.setExpired(true);
-            token.setRevoked(true);
-        });
+    private void revokeAllUserTokens(Long userId) {
+        var tokens = tokenRepository.findAllValidTokenByUser(userId);
+        tokens.forEach(t -> { t.setExpired(true); t.setRevoked(true); });
         tokenRepository.saveAll(tokens);
     }
-
-    /* ===================== LOGOUT / REFRESH ===================== */
-
-    @Transactional
-    public TokenResponse refreshToken(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return null;
-
-        try {
-            String refreshToken = authHeader.substring(7);
-            String email = jwtService.extractUsername(refreshToken);
-
-            var user = userRepository.findByEmail(email).orElseThrow();
-            var storedToken = tokenRepository.findByToken(refreshToken).orElse(null);
-
-            if (storedToken != null && !storedToken.isRevoked()
-                    && jwtService.isTokenValid(refreshToken, user)) {
-
-                revokeAllUserTokens(user);
-
-                var accessToken = jwtService.generateToken(user);
-                var newRefreshToken = jwtService.generateRefreshToken(user);
-
-                saveUserToken(user, accessToken);
-                saveUserToken(user, newRefreshToken);
-
-                return new TokenResponse(accessToken, newRefreshToken);
-            }
-        } catch (Exception e) {
-            log.error("Error en refresh token", e);
-        }
-        return null;
-    }
-
-    @Transactional
-    public void logout(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) return;
-
-        tokenRepository.findByToken(authHeader.substring(7)).ifPresent(token -> {
-            token.setExpired(true);
-            token.setRevoked(true);
-            tokenRepository.save(token);
-            SecurityContextHolder.clearContext();
-            log.info("Logout realizado");
-        });
-    }
-
-    @Transactional
-    public TokenResponse resetPasswordFromProfile(String email, String newPassword) {
-
-        // 1️⃣ Buscar usuario autenticado
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new RuntimeException("Usuario no encontrado"));
-
-        // 3️⃣ Actualizar contraseña
-        user.setPassword(passwordEncoder.encode(newPassword));
-
-        // 4️⃣ Invalidar TODOS los tokens activos
-        revokeAllUserTokens(user);
-
-        // 5️⃣ Resetear estado de seguridad
-        user.setFailedAttempt(0);
-        user.setAccountNonLocked(true);
-        user.setLockTime(null);
-
-        // 6️⃣ Generar NUEVOS tokens
-        String accessToken = jwtService.generateToken(user);
-        String refreshToken = jwtService.generateRefreshToken(user);
-
-        // 7️⃣ Guardarlos
-        saveUserToken(user, accessToken);
-        saveUserToken(user, refreshToken);
-
-        userRepository.save(user);
-
-        log.info("🔐 Contraseña actualizada desde perfil para {}", email);
-
-        // 8️⃣ Devolver tokens nuevos
-        return new TokenResponse(accessToken, refreshToken);
-    }
-
-
 }

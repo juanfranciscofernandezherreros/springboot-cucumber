@@ -2,28 +2,24 @@ package com.fernandez.backend.controller;
 
 import com.fernandez.backend.dto.LoginRequest;
 import com.fernandez.backend.dto.RegisterRequest;
-import com.fernandez.backend.dto.ResetPasswordRequest;
 import com.fernandez.backend.dto.TokenResponse;
 import com.fernandez.backend.service.AuthService;
-import com.fernandez.backend.utils.constants.AuthEndpoints;
+import com.fernandez.backend.utils.constants.AuthApiPaths;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
-
 @RestController
-@RequestMapping(AuthEndpoints.BASE)
+@RequestMapping(AuthApiPaths.BASE)
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService service;
 
-    @PostMapping(AuthEndpoints.REGISTER)
+    @PostMapping(AuthApiPaths.REGISTER)
     public ResponseEntity<Void> register(
             @RequestBody RegisterRequest request,
             HttpServletRequest httpRequest
@@ -33,7 +29,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping(AuthEndpoints.LOGIN)
+    @PostMapping(AuthApiPaths.LOGIN)
     public ResponseEntity<TokenResponse> authenticate(
             @RequestBody LoginRequest request,
             HttpServletRequest httpRequest
@@ -42,7 +38,7 @@ public class AuthController {
         return ResponseEntity.ok(service.login(request, clientIp));
     }
 
-    @PostMapping(AuthEndpoints.REFRESH_TOKEN)
+    @PostMapping(AuthApiPaths.REFRESH_TOKEN)
     public ResponseEntity<TokenResponse> refreshToken(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
     ) {
@@ -52,7 +48,7 @@ public class AuthController {
                 : ResponseEntity.ok(response);
     }
 
-    @PostMapping(AuthEndpoints.LOGOUT)
+    @PostMapping(AuthApiPaths.LOGOUT)
     public ResponseEntity<Void> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         service.logout(authHeader);
         return ResponseEntity.ok().build();
