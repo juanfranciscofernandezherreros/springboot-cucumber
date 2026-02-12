@@ -1,5 +1,6 @@
 package com.fernandez.backend.service;
 
+import com.fernandez.backend.model.Privilege;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
 import io.jsonwebtoken.Claims;
@@ -16,6 +17,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -39,29 +41,38 @@ public class JwtService {
 
     private String buildToken(User user, long expiration) {
 
-        // =====================
-        // CLAIMS DEFENSIVOS
-        // =====================
+        // ============================================================
+        // CLAIMS DINÁMICOS: ROLES Y PRIVILEGIOS (AUTHORITIES)
+        // ============================================================
         Map<String, Object> claims = new java.util.HashMap<>();
 
-        claims.put(
-                "name",
-                user.getName() != null ? user.getName() : ""
-        );
+        claims.put("name", user.getName() != null ? user.getName() : "");
 
-        claims.put(
-                "roles",
-                user.getRoles() != null
-                        ? user.getRoles()
-                        .stream()
-                        .map(Role::getName)
-                        .toList()
-                        : java.util.List.of()
-        );
+        if (user.getRoles() != null) {
+            // 1. Extraemos los nombres de los Roles (ej. ADMIN, PREMIUM)
+            java.util.List<String> roleNames = user.getRoles().stream()
+                    .map(Role::getName)
+                    .collect(Collectors.toList());
+            claims.put("roles", roleNames);
+
+            // 2. EXTRAEMOS LOS PRIVILEGIOS (La magia del Many-to-Many)
+            // Recorremos cada rol, entramos en su Set de privilegios y los unificamos
+            java.util.List<String> authorities = user.getRoles().stream()
+                    .flatMap(role -> role.getPrivileges().stream())
+                    .map(Privilege::getName)
+                    .distinct() // Evitamos duplicados si dos roles comparten un privilegio
+                    .collect(Collectors.toList());
+
+            // Estas "authorities" son las que hasAuthority('...') buscará en el backend
+            claims.put("authorities", authorities);
+        } else {
+            claims.put("roles", java.util.List.of());
+            claims.put("authorities", java.util.List.of());
+        }
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getEmail()) // email JAMÁS debe ser null
+                .setSubject(user.getEmail())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .setId(UUID.randomUUID().toString())

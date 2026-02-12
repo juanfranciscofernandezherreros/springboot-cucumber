@@ -7,13 +7,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "roles")
+@Table(name = "privileges")
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString(onlyExplicitlyIncluded = true)
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Role {
+public class Privilege {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,17 +24,16 @@ public class Role {
     @EqualsAndHashCode.Include
     private String name;
 
-    // --- LA MAGIA DEL STREAMING: Many-to-Many con Privilegios ---
-    @ManyToMany(fetch = FetchType.EAGER) // Eager para cargar las "llaves" junto al rol
+    @ManyToMany(fetch = FetchType.EAGER) // Eager para que al cargar el Rol ya traiga sus permisos
     @JoinTable(
-            name = "roles_privileges", // Tabla intermedia en tu DB local
+            name = "roles_privileges",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "privilege_id")
     )
     @ToString.Exclude
     private Set<Privilege> privileges = new HashSet<>();
 
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "privileges")
     @ToString.Exclude
-    private Set<User> users = new HashSet<>();
+    private Set<Role> roles = new HashSet<>();
 }

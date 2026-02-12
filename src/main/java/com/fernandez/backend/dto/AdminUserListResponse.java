@@ -16,9 +16,8 @@ public class AdminUserListResponse {
     private Long id;
     private String name;
     private String email;
-
     private List<String> roles;
-
     private boolean accountNonLocked;
     private int failedAttempt;
+    private int lockCount;
 }

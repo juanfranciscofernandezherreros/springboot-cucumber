@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity // Permite usar @PreAuthorize en los controladores
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -32,68 +34,86 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
         http
-                /* =========================
-                   CORS, CSRF & HEADERS (H2 FIX)
-                   ========================= */
+                /* ============================================================
+                   1. CONFIGURACIÓN BASE (CORS, CSRF & H2)
+                   ============================================================ */
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Desactivamos CSRF para que H2 pueda hacer POST y JWT funcione
                 .csrf(csrf -> csrf.disable())
-                // NECESARIO PARA H2: Permite que la consola se cargue en marcos (frames)
                 .headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()))
 
-                /* =========================
-                   SESSION (JWT = STATELESS)
-                   ========================= */
+                /* ============================================================
+                   2. GESTIÓN DE SESIÓN (STATELESS - JWT)
+                   ============================================================ */
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                /* =========================
-                   AUTHORIZATION
-                   ========================= */
+                /* ============================================================
+                   3. REGLAS DE AUTORIZACIÓN (MAPEADO DE ENDPOINTS)
+                   ============================================================ */
                 .authorizeHttpRequests(auth -> auth
 
-                        // 1. Recursos Públicos y H2 Console
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // Usamos AntPathRequestMatcher para asegurar el acceso a H2
+                        // --- A. RUTAS PÚBLICAS (Auth, Documentación, H2) ---
                         .requestMatchers(new AntPathRequestMatcher("/h2-console/**")).permitAll()
                         .requestMatchers(
-                                "/",
-                                "/index.html",
-                                "/static/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**",
-                                "/auth/**",
-                                "/ws-invitations/**"
+                                "/", "/index.html", "/static/**", "/auth/**",
+                                "/swagger-ui/**", "/v3/api-docs/**"
                         ).permitAll()
-                        // 2. Invitaciones
+
+                        // --- B. ENDPOINTS DE INVITACIÓN (invitation-controller) ---
+                        // El registro de una nueva invitación suele ser público (solicitud)
                         .requestMatchers(HttpMethod.POST, "/api/v1/admin/invitations").permitAll()
-                        .requestMatchers("/api/v1/admin/invitations/**").hasRole("ADMIN")
-                        // 3. 🔒 GESTIÓN DE PERFIL
-                        .requestMatchers(HttpMethod.PUT, "/api/v1/users/update").hasRole("USER")
-                        .requestMatchers(HttpMethod.GET, "/api/v1/users/me").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/admin/audit").hasRole("ADMIN")
-                        // 4. 🔒 ADMIN AREA
+                        // El resto de la gestión requiere privilegios
+                        .requestMatchers(HttpMethod.GET, "/api/v1/admin/invitations/**").hasAuthority("admin:read")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/admin/invitations/**").hasAuthority("admin:update")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/admin/invitations/**").hasAuthority("admin:update")
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/invitations/**").hasAuthority("admin:delete")
+
+                        // --- C. DASHBOARD DE ADMINISTRACIÓN (admin-controller) ---
+                        // Lectura de datos, estados y estadísticas
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/admin/users",
+                                "/api/v1/admin/user-status",
+                                "/api/v1/admin/stats",
+                                "/api/v1/admin/locked-users").hasAuthority("admin:read")
+
+                        // Acciones de modificación (Bloqueo, Desbloqueo, Roles)
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/v1/admin/lock-user/**",
+                                "/api/v1/admin/unlock/**",
+                                "/api/v1/admin/create-user").hasAnyAuthority("admin:update", "admin:create")
+
+                        .requestMatchers(HttpMethod.PUT,
+                                "/api/v1/admin/update-user/**",
+                                "/api/v1/admin/update-role").hasAuthority("admin:update")
+
+                        // Eliminación de usuarios
+                        .requestMatchers(HttpMethod.DELETE, "/api/v1/admin/delete/**").hasAuthority("admin:delete")
+
+                        // --- D. AUDITORÍA (audit-controller) ---
+                        .requestMatchers("/api/v1/admin/audit/**").hasAuthority("admin:read")
+
+                        // --- E. ENDPOINTS DE USUARIO (user-controller) ---
+                        .requestMatchers("/api/v1/users/me/**").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/users/update").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/users/me/password").authenticated()
+
+                        // --- F. REGLA DE RESPALDO PARA ADMIN ---
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        // 🔐 RESET PASSWORD: USER y ADMIN
-                        .requestMatchers(HttpMethod.POST, "/auth/reset-password")
-                        .hasAnyRole("USER", "ADMIN")
 
-
-                        // 5. Resto de la API
+                        // Cierre de seguridad
                         .anyRequest().authenticated()
                 )
 
-                /* =========================
-                   JWT & AUTH PROVIDER
-                   ========================= */
+                /* ============================================================
+                   4. FILTROS Y AUTENTICACIÓN
+                   ============================================================ */
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-                /* =========================
-                   LOGOUT
-                   ========================= */
+                /* ============================================================
+                   5. LOGOUT
+                   ============================================================ */
                 .logout(logout -> logout
                         .logoutUrl("/auth/logout")
                         .addLogoutHandler(logoutHandler)
@@ -109,10 +129,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:3000",
-                "http://localhost:8087"
-        ));
+        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8087"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

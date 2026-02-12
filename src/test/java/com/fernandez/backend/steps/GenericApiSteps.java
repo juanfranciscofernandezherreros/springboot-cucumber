@@ -2,6 +2,7 @@ package com.fernandez.backend.steps;
 
 import io.cucumber.java.PendingException;
 import io.cucumber.java.en.And;
+import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 import net.serenitybdd.core.Serenity;
@@ -564,5 +565,11 @@ public class GenericApiSteps {
                 actualStatus,
                 "El código de estado no es el esperado para esta política de acceso."
         );
+    }
+
+    @Given("v{int} estoy autenticado como un administrador sin permisos de borrado")
+    public void vEstoyAutenticadoComoUnAdministradorSinPermisosDeBorrado(int arg0) {
+        // Write code here that turns the phrase above into concrete actions
+        throw new PendingException();
     }
 }

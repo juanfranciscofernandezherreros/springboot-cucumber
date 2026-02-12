@@ -1,16 +1,12 @@
 package com.fernandez.backend.config;
 
-import com.fernandez.backend.model.Invitation;
-import com.fernandez.backend.model.InvitationStatus;
-import com.fernandez.backend.model.Role;
-import com.fernandez.backend.model.User;
-import com.fernandez.backend.repository.InvitationRepository;
-import com.fernandez.backend.repository.RoleRepository;
-import com.fernandez.backend.repository.UserRepository;
+import com.fernandez.backend.model.*;
+import com.fernandez.backend.repository.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -19,59 +15,79 @@ public class UserDataInitializer {
     public static void init(
             UserRepository userRepository,
             RoleRepository roleRepository,
-            InvitationRepository invitationRepository, // Inyectamos el repositorio
+            InvitationRepository invitationRepository,
+            PrivilegeRepository privilegeRepository,
             PasswordEncoder passwordEncoder
     ) {
-        // --- INICIALIZACIÓN DE ROLES ---
-        createRoleIfNotExists(roleRepository, "ADMIN");
-        createRoleIfNotExists(roleRepository, "MANAGER");
-        createRoleIfNotExists(roleRepository, "USER");
+        // --- 1. PRIVILEGIOS ---
+        Privilege view4k = createPrivilegeIfNotExist(privilegeRepository, "movie:stream:4k");
+        Privilege viewHd = createPrivilegeIfNotExist(privilegeRepository, "movie:stream:hd");
+        Privilege download = createPrivilegeIfNotExist(privilegeRepository, "movie:download");
+        Privilege upload = createPrivilegeIfNotExist(privilegeRepository, "movie:upload");
+        Privilege accessJava = createPrivilegeIfNotExist(privilegeRepository, "course:access:java");
 
-        Role adminRole = roleRepository.findByName("ADMIN").orElseThrow();
-        Role managerRole = roleRepository.findByName("MANAGER").orElseThrow();
-        Role userRole = roleRepository.findByName("USER").orElseThrow();
+        Privilege adminRead = createPrivilegeIfNotExist(privilegeRepository, "admin:read");
+        Privilege adminUpdate = createPrivilegeIfNotExist(privilegeRepository, "admin:update");
+        Privilege adminDelete = createPrivilegeIfNotExist(privilegeRepository, "admin:delete");
+        Privilege adminCreate = createPrivilegeIfNotExist(privilegeRepository, "admin:create");
 
-        // --- INICIALIZACIÓN DE USUARIOS ---
-        createUser(userRepository, passwordEncoder, "admin@test.com", "Super Admin", "admin123", Set.of(adminRole), false);
-        createUser(userRepository, passwordEncoder, "user2@test.com", "User Active", "user123", Set.of(userRole), false);
-        createUser(userRepository, passwordEncoder, "user3@test.com", "User INactive", "user123", Set.of(userRole), true);
-        createUser(userRepository, passwordEncoder, "user4@test.com", "User Active", "user123", Set.of(userRole), false);
-        // --- INICIALIZACIÓN DE INVITACIONES (Varios estados) ---
+        // --- 2. ROLES ---
+        Role adminRole = createRoleWithPrivileges(roleRepository, "ADMIN",
+                Set.of(view4k, viewHd, download, upload, accessJava, adminRead, adminUpdate, adminDelete, adminCreate));
+        Role limitedAdminRole = createRoleWithPrivileges(roleRepository, "LIMITED_ADMIN",
+                Set.of(viewHd, adminRead, adminUpdate, adminCreate));
+        // Creamos el rol MANAGER (requerido por tu test de actualización de rol)
+        Role managerRole = createRoleWithPrivileges(roleRepository, "MANAGER",
+                Set.of(viewHd, adminRead, adminUpdate));
 
-        // 1. Invitaciones PENDIENTES (Aparecerán en /pending y /all)
-        createInvitation(invitationRepository, "pendiente1@test.com", "Invitado Uno", "Interés en departamento IT", InvitationStatus.PENDING);
-        createInvitation(invitationRepository, "pendiente2@test.com", "Invitado Dos", "Candidato RRHH", InvitationStatus.PENDING);
+        Role premiumRole = createRoleWithPrivileges(roleRepository, "PREMIUM",
+                Set.of(view4k, viewHd, download, accessJava));
 
-        // 2. Invitaciones ACEPTADAS (Historial)
-        createInvitation(invitationRepository, "aceptada@test.com", "Juan Aceptado", "Antiguo empleado", InvitationStatus.ACCEPTED);
+        Role userRole = createRoleWithPrivileges(roleRepository, "USER",
+                Set.of(viewHd, accessJava));
 
-        // 3. Invitaciones RECHAZADAS (Historial)
-        createInvitation(invitationRepository, "rechazada@test.com", "Luis Rechazado", "No cumple requisitos", InvitationStatus.REJECTED);
+        // --- 3. USUARIOS PARA ESCENARIOS DE TEST ---
 
-        // 4. Invitación EXPIRADA (Historial)
-        createInvitation(invitationRepository, "expirada@test.com", "Maria Expirada", "Nunca respondió", InvitationStatus.EXPIRED);
+        // Background: Login de Super Admin
+        createUser(userRepository, passwordEncoder, "admin@test.com", "Admin Master", "admin123", Set.of(adminRole), false);
+
+        // Scenario: Bloquear/Desbloquear/Rol (Necesita a user2)
+        createUser(userRepository, passwordEncoder, "user2@test.com", "Usuario Dos", "user123", Set.of(userRole), false);
+
+        // Scenario: Actualizar y Eliminar (Necesita a user3)
+        createUser(userRepository, passwordEncoder, "user3@test.com", "Usuario Tres", "user123", Set.of(userRole), false);
+        createUser(userRepository, passwordEncoder, "user4@test.com", "Usuario Cuatro", "user123", Set.of(userRole), false);
+
+        // Scenario: Listar usuarios (Busca a admin_created)
+        createUser(userRepository, passwordEncoder, "admin_created@test.com", "Admin Creado Test", "password123", Set.of(userRole), false);
+
+        // Otros usuarios base
+        createUser(userRepository, passwordEncoder, "premium@test.com", "Juan Premium", "user123", Set.of(premiumRole), false);
+        createUser(userRepository, passwordEncoder, "alumno@test.com", "Pedro Java", "user123", Set.of(userRole), false);
+        createUser(userRepository, passwordEncoder, "limited-admin@test.com", "Admin Limitado", "admin123", Set.of(limitedAdminRole), false);
+        // --- 4. INVITACIONES ---
+        createInvitation(invitationRepository, "invitado@test.com", "Nuevo Cinefilo", "Interesado en catálogo de terror", InvitationStatus.PENDING);
+        // Invitación para user3 (para que el test pueda capturar el ID si lo necesitas desde ahí)
+        createInvitation(invitationRepository, "user3@test.com", "Usuario Tres", "Estado inicial", InvitationStatus.ACCEPTED);
     }
 
-    private static void createInvitation(
-            InvitationRepository repo,
-            String email,
-            String name,
-            String desc,
-            InvitationStatus status
-    ) {
-        if (!repo.existsByEmailAndStatus(email, status)) {
-            Invitation invitation = Invitation.builder()
-                    .email(email)
-                    .name(name)
-                    .description(desc)
-                    .role("USER")
-                    .token(UUID.randomUUID().toString())
-                    .status(status)
-                    .createdAt(Instant.now().minus(5, ChronoUnit.DAYS))
-                    .expiresAt(Instant.now().plus(2, ChronoUnit.DAYS))
-                    .build();
-            repo.save(invitation);
-        }
+    /* MÉTODOS AUXILIARES */
+    private static Privilege createPrivilegeIfNotExist(PrivilegeRepository repo, String name) {
+        return repo.findByName(name).orElseGet(() -> {
+            Privilege p = new Privilege();
+            p.setName(name);
+            return repo.save(p);
+        });
+    }
+
+    private static Role createRoleWithPrivileges(RoleRepository repo, String name, Set<Privilege> privileges) {
+        Role role = repo.findByName(name).orElseGet(() -> {
+            Role r = new Role();
+            r.setName(name);
+            return r;
+        });
+        role.setPrivileges(privileges);
+        return repo.save(role);
     }
 
     private static void createUser(UserRepository repo, PasswordEncoder encoder, String email, String name, String rawPass, Set<Role> roles, boolean isLocked) {
@@ -86,11 +102,19 @@ public class UserDataInitializer {
         }
     }
 
-    private static void createRoleIfNotExists(RoleRepository repo, String roleName) {
-        if (!repo.existsByName(roleName)) {
-            Role role = new Role();
-            role.setName(roleName);
-            repo.save(role);
+    private static void createInvitation(InvitationRepository repo, String email, String name, String desc, InvitationStatus status) {
+        if (!repo.existsByEmailAndStatus(email, status)) {
+            Invitation invitation = Invitation.builder()
+                    .email(email)
+                    .name(name)
+                    .description(desc)
+                    .role("USER")
+                    .token(UUID.randomUUID().toString())
+                    .status(status)
+                    .createdAt(Instant.now().minus(2, ChronoUnit.DAYS))
+                    .expiresAt(Instant.now().plus(5, ChronoUnit.DAYS))
+                    .build();
+            repo.save(invitation);
         }
     }
 }

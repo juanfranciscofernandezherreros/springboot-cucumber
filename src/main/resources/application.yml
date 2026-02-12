@@ -1,3 +1,17 @@
+app:
+  security:
+    lock:
+      durations:
+        1: 60000    # 1 minuto
+        2: 120000   # 2 minutos
+        3: 180000   # 3 minutos
+  admin:
+    messages:
+      user-locked: "Usuario %s ha sido bloqueado correctamente."
+      user-unlocked: "Usuario %s ha sido desbloqueado correctamente."
+      role-updated: "Rol de %s actualizado a %s"
+      user-deleted: "Usuario con id %d eliminado correctamente."
+      user-created: "Usuario %s creado correctamente"
 server:
   port: 8087
 telegram:
@@ -6,6 +20,8 @@ telegram:
     chat-id: 407537798
 application:
   security:
+    send-data-telegram-enabled: true
+    send-data-email-enabled: true
     redis-enabled: false
     ip-lock:
       enabled: false
@@ -18,6 +34,17 @@ application:
         expiration: 315360000000
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: xxxx@gmail.com
+    password: whhi xtgn ckdi ttjt
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
   datasource:
     url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver

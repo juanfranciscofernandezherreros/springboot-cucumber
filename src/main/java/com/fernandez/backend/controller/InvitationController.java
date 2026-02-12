@@ -28,14 +28,6 @@ public class InvitationController {
 
     private final InvitationRepository invitationRepository;
 
-    // =====================================================
-    // GESTIÓN DE LISTADOS Y FILTROS
-    // =====================================================
-
-    /**
-     * Endpoint Maestro: Lista todo o filtra por estados específicos.
-     * Uso: /all?statuses=PENDING,ACCEPTED
-     */
     @GetMapping("/all")
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getAll(
@@ -47,9 +39,6 @@ public class InvitationController {
         return ResponseEntity.ok(invitationRepository.findByStatusInOrderByCreatedAtDesc(statuses));
     }
 
-    /**
-     * Retorna todos los tipos de estado disponibles en el sistema.
-     */
     @GetMapping("/statuses")
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<InvitationStatus>> getAvailableStatuses() {

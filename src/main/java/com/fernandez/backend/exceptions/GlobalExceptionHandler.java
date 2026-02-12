@@ -49,5 +49,11 @@ public class GlobalExceptionHandler {
                 .body(Map.of("mensaje", "Usuario bloqueado"));
     }
 
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("mensaje", ex.getMessage()));
+    }
 
 }
