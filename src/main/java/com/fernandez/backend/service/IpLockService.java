@@ -6,12 +6,11 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.stereotype.Service;
+
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-@Service
-public class IpLockService {
+public class IpLockService implements IIpLockService {
 
     private final StringRedisTemplate redisTemplate;
     private final IpLockProperties properties;

@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-public class TelegramService {
+public class TelegramService implements ITelegramService {
 
     @Value("${telegram.bot.token}")
     private String botToken;

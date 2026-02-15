@@ -13,15 +13,13 @@ import com.fernandez.backend.repository.UserRepository;
 import com.fernandez.backend.utils.constants.ServiceStrings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
-public class UserService {
+public class UserService implements IUserService {
 
     private final UserRepository userRepository;
     private final InvitationRepository invitationRepository;

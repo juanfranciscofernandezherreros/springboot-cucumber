@@ -2,8 +2,8 @@ package com.fernandez.backend.controller;
 
 import com.fernandez.backend.config.AdminMessagesProperties;
 import com.fernandez.backend.dto.*;
-import com.fernandez.backend.service.AuthService;
-import com.fernandez.backend.service.UserService;
+import com.fernandez.backend.service.IAuthService;
+import com.fernandez.backend.service.IUserService;
 import com.fernandez.backend.utils.constants.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,8 +20,8 @@ import java.util.Map;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminController {
 
-    private final UserService userService;
-    private final AuthService authService;
+    private final IUserService userService;
+    private final IAuthService authService;
     private final AdminMessagesProperties msg;
 
     // =====================================================

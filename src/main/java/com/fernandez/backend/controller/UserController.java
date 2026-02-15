@@ -2,8 +2,8 @@ package com.fernandez.backend.controller;
 
 import com.fernandez.backend.dto.*;
 import com.fernandez.backend.model.User;
-import com.fernandez.backend.service.AuthService;
-import com.fernandez.backend.service.UserService;
+import com.fernandez.backend.service.IAuthService;
+import com.fernandez.backend.service.IUserService;
 import com.fernandez.backend.utils.constants.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,8 @@ import java.util.Map;
 @PreAuthorize("hasRole('USER')")
 public class UserController {
 
-    private final UserService userService;
-    private final AuthService service;
+    private final IUserService userService;
+    private final IAuthService service;
 
     @GetMapping(ApiPaths.Users.ME)
     public ResponseEntity<UserResponse> getMyProfile(

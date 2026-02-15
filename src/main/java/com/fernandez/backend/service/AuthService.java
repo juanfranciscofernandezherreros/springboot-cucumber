@@ -28,20 +28,19 @@ import java.util.Set;
 import static com.fernandez.backend.utils.constants.AuthServiceConstants.*;
 import com.fernandez.backend.utils.constants.ServiceStrings;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthService {
+public class AuthService implements IAuthService {
 
     private final UserRepository userRepository;
     private final TokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
+    private final IJwtService jwtService;
     private final AuthenticationManager authenticationManager;
-    private final IpLockService ipLockService;
+    private final IIpLockService ipLockService;
     private final RoleRepository roleRepository;
-    private final TelegramService telegramService;
-    private final EmailService emailService;
+    private final ITelegramService telegramService;
+    private final IEmailService emailService;
     private final SecurityNotificationProperties notificationProperties;
     private final SecurityLockProperties lockProperties;
 
@@ -280,3 +279,4 @@ public class AuthService {
         tokenRepository.saveAll(tokens);
     }
 }
+

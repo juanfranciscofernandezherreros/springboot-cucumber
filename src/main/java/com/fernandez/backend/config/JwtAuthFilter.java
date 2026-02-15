@@ -1,7 +1,7 @@
 package com.fernandez.backend.config;
 
 import com.fernandez.backend.repository.TokenRepository;
-import com.fernandez.backend.service.JwtService;
+import com.fernandez.backend.service.IJwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ import java.io.IOException;
 @RequiredArgsConstructor
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    private final IJwtService jwtService;
     private final UserDetailsService userDetailsService;
     private final TokenRepository tokenRepository;
 

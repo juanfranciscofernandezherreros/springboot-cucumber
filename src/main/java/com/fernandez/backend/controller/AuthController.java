@@ -3,7 +3,7 @@ package com.fernandez.backend.controller;
 import com.fernandez.backend.dto.LoginRequest;
 import com.fernandez.backend.dto.RegisterRequest;
 import com.fernandez.backend.dto.TokenResponse;
-import com.fernandez.backend.service.AuthService;
+import com.fernandez.backend.service.IAuthService;
 import com.fernandez.backend.utils.constants.ApiPaths;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService service;
+    private final IAuthService service;
 
     @PostMapping(ApiPaths.Auth.REGISTER)
     public ResponseEntity<Void> register(
