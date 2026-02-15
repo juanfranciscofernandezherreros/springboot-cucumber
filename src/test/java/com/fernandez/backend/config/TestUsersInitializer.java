@@ -1,10 +1,7 @@
 package com.fernandez.backend.config;
 
 import com.fernandez.backend.infrastructure.config.UserDataInitializer;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.PrivilegeRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -22,7 +19,7 @@ public class TestUsersInitializer implements ApplicationRunner {
     private final PrivilegeRepository privilegeRepository;
     private final InvitationRepository invitationRepository;
     private final PasswordEncoder passwordEncoder;
-
+    private final OperationMessageRepository operationMessageRepository;
     @Override
     public void run(ApplicationArguments args) {
         UserDataInitializer.init(
@@ -30,7 +27,8 @@ public class TestUsersInitializer implements ApplicationRunner {
                 roleRepository,
                 invitationRepository,
                 privilegeRepository,
-                passwordEncoder
+                passwordEncoder,
+                operationMessageRepository
         );
     }
 }

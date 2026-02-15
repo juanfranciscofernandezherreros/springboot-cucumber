@@ -1,5 +1,6 @@
 package com.fernandez.backend.application.util;
 
+import com.fernandez.backend.domain.model.OperationMessage;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.OperationMessageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -33,13 +34,13 @@ public class OperationMessages {
 
         String template = null;
         if (langTag != null && !langTag.isBlank()) {
-            template = repository.findByKeyAndLang(key, langTag).map(m -> m.getText()).orElse(null);
+            template = repository.findByKeyAndLang(key, langTag).map(OperationMessage::getText).orElse(null);
         }
         if (template == null && lang != null && !lang.isBlank()) {
-            template = repository.findByKeyAndLang(key, lang).map(m -> m.getText()).orElse(null);
+            template = repository.findByKeyAndLang(key, lang).map(OperationMessage::getText).orElse(null);
         }
         if (template == null) {
-            template = repository.findByKeyAndLang(key, "es").map(m -> m.getText()).orElse(null);
+            template = repository.findByKeyAndLang(key, "es").map(OperationMessage::getText).orElse(null);
         }
         if (template == null) {
             return key;
