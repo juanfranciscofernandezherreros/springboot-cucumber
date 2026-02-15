@@ -12,7 +12,7 @@ import com.fernandez.backend.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -26,12 +26,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Carga datos de test desde CSV en el perfil de test.
- * - Usuarios / roles / privilegios: test-users-rbac.csv
- * - Invitaciones: test-invitations.csv
+ * Carga datos de test desde CSV.
+ * Se habilita exclusivamente en entorno de tests mediante la property:
+ *   test.data.csv.enabled=true
  */
 @Configuration
-@Profile("test")
+@ConditionalOnProperty(name = "test.data.csv.enabled", havingValue = "true", matchIfMissing = true)
 public class TestCsvDataLoader {
 
     @Bean
@@ -191,4 +191,3 @@ public class TestCsvDataLoader {
         return out.toArray(new String[0]);
     }
 }
-

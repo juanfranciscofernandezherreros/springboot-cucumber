@@ -75,3 +75,8 @@ spring:
     user:
       name: sa
       password: password
+
+test:
+  data:
+    csv:
+      enabled: true
