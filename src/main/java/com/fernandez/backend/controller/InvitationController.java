@@ -23,7 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping(ApiPaths.Invitations.BASE)
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("isAuthenticated()")
 public class InvitationController {
 
     private final InvitationRepository invitationRepository;
@@ -31,7 +31,7 @@ public class InvitationController {
     @GetMapping(ApiPaths.Invitations.ALL)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getAll(
-            @RequestParam(required = false) List<InvitationStatus> statuses) {
+            @RequestParam(name = "statuses", required = false) List<InvitationStatus> statuses) {
 
         if (statuses == null || statuses.isEmpty()) {
             return ResponseEntity.ok(invitationRepository.findAllByOrderByCreatedAtDesc());
@@ -62,7 +62,7 @@ public class InvitationController {
     // =====================================================
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('admin:create')")
     @Transactional
     public ResponseEntity<?> createInvitation(@RequestBody CreateInvitationRequestDto request) {
 
@@ -93,8 +93,8 @@ public class InvitationController {
     @PreAuthorize("hasAuthority('admin:update')")
     @Transactional
     public ResponseEntity<?> updateStatus(
-            @PathVariable Long id,
-            @RequestParam InvitationStatus newStatus) {
+            @PathVariable(name = "id") Long id,
+            @RequestParam(name = "newStatus") InvitationStatus newStatus) {
 
         return invitationRepository.findById(id)
                 .map(invitation -> {
@@ -120,7 +120,7 @@ public class InvitationController {
     @DeleteMapping(ApiPaths.Invitations.DELETE)
     @PreAuthorize("hasAuthority('admin:delete')")
     @Transactional
-    public ResponseEntity<Void> deleteInvitation(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteInvitation(@PathVariable(name = "id") Long id) {
         if (!invitationRepository.existsById(id)) {
             return ResponseEntity.notFound().build();
         }
@@ -137,8 +137,8 @@ public class InvitationController {
     @PreAuthorize("hasAuthority('admin:update')")
     @Transactional
     public ResponseEntity<?> updateInvitation(
-            @PathVariable Long id,
-            @RequestBody CreateInvitationRequestDto request) {
+            @PathVariable(name = "id") Long id,
+             @RequestBody CreateInvitationRequestDto request) {
 
         return invitationRepository.findById(id)
                 .map(invitation -> {
