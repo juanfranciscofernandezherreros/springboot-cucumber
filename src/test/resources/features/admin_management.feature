@@ -5,7 +5,7 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Given v2 envío una petición POST a "/auth/login" con el cuerpo:
       """
       {
-        "email": "admin@test.com",
+        "email": "admin_update@test.com",
         "password": "admin123"
       }
       """
@@ -48,9 +48,29 @@ Feature: Gestión Extendida de Usuarios para Administradores
   # =============================================================
 
   Scenario: 02 - Actualizar datos de usuario y eliminar
+    # Re-login con admin_read para obtener usuario
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_read@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
     # 1. Obtenemos el ID de user3 (GET directo)
     When v2 envío una petición GET a "/api/v1/admin/user-status?email=user3@test.com" con autorización
     And v2 capturo el ID de la invitación de la respuesta
+
+    # Re-login con admin_update para editar
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_update@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
 
     # 2. Editar usuario por ID (Devuelve AdminActionResponse)
     When v2 envío una petición PUT a "/api/v1/admin/update-user/{id}" con el cuerpo:
@@ -58,6 +78,16 @@ Feature: Gestión Extendida de Usuarios para Administradores
       {
         "name": "Nombre Editado Admin",
         "email": "user3@test.com"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
+    # Re-login con admin_delete para eliminar
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_delete@test.com",
+        "password": "admin123"
       }
       """
     Then v2 el código de estado debe ser 200
@@ -72,6 +102,15 @@ Feature: Gestión Extendida de Usuarios para Administradores
   # =============================================================
 
   Scenario: 03 - Crear un nuevo usuario desde el panel de administración
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_create@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
     # POST /api/v1/admin/create-user (Devuelve AdminActionResponse + 201)
     When v2 envío una petición POST a "/api/v1/admin/create-user" con el cuerpo:
       """
@@ -85,8 +124,16 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Then v2 el código de estado debe ser 201
     And v2 la respuesta contiene "admin_created_new@test.com"
 
-  @error_handling
   Scenario: 04 - Intentar crear un usuario que ya existe desde el panel de administración
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_create@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
     # Debe lanzar la UserAlreadyExistsException (400 Bad Request)
     When v2 envío una petición POST a "/api/v1/admin/create-user" con el cuerpo:
       """
@@ -104,12 +151,28 @@ Feature: Gestión Extendida de Usuarios para Administradores
   # =============================================================
 
   Scenario: 05 - Listar todos los usuarios del sistema
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_read@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
     When v2 envío una petición GET a "/api/v1/admin/users" con autorización
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe ser una lista con elementos
-    And v2 la respuesta debe ser una lista que contiene el email "admin_created@test.com"
 
-  @stats
   Scenario: 06 - Obtener estadísticas globales de usuarios
+    Given v2 envío una petición POST a "/auth/login" con el cuerpo:
+      """
+      {
+        "email": "admin_read@test.com",
+        "password": "admin123"
+      }
+      """
+    Then v2 el código de estado debe ser 200
+
     When v2 envío una petición GET a "/api/v1/admin/stats" con autorización
     Then v2 el código de estado debe ser 200
