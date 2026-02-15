@@ -132,14 +132,23 @@ public class UserDataInitializer {
         upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "es", "Usuario con id %d eliminado correctamente.");
         upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "es", "Contraseña actualizada");
 
-        // Inglés (mínimo)
+        // Inglés
         upsertMessage(repo, OperationMessageKeys.ADMIN_USER_CREATED, "en", "User %s created successfully");
-        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "en", "User %s has been locked successfully");
-        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "en", "User %s has been unlocked successfully");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "en", "User %s has been locked successfully.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "en", "User %s has been unlocked successfully.");
         upsertMessage(repo, OperationMessageKeys.ADMIN_ROLE_UPDATED, "en", "Role for %s updated to %s");
         upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UPDATED, "en", "User updated successfully");
-        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "en", "User with id %d deleted successfully");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "en", "User with id %d deleted successfully.");
         upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "en", "Password updated");
+
+        // Catalán
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_CREATED, "ca", "Usuari %s creat correctament");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "ca", "Usuari %s bloquejat correctament.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "ca", "Usuari %s desbloquejat correctament.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_ROLE_UPDATED, "ca", "Rol de %s actualitzat a %s");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UPDATED, "ca", "Usuari actualitzat correctament");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "ca", "Usuari amb id %d eliminat correctament.");
+        upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "ca", "Contrasenya actualitzada");
     }
 
     private static void upsertMessage(OperationMessageRepository repo, String key, String lang, String text) {
