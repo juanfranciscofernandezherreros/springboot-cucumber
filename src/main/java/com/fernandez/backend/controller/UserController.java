@@ -18,7 +18,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(ApiPaths.Users.BASE)
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("isAuthenticated()")
 public class UserController {
 
     private final IUserService userService;
