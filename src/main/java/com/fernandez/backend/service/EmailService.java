@@ -1,5 +1,6 @@
 package com.fernandez.backend.service;
 
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.mail.SimpleMailMessage;
@@ -23,8 +24,7 @@ public class EmailService {
             message.setText(text);
             mailSender.send(message);
         } catch (Exception e) {
-            log.warn("No se pudo enviar el email a {}", e.getMessage());
+            log.warn(ServiceStrings.Email.LOG_WARN_CANT_SEND, e.getMessage());
         }
     }
 }
-

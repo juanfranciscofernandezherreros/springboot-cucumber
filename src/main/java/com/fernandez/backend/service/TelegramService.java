@@ -1,5 +1,6 @@
 package com.fernandez.backend.service;
 
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -22,15 +23,14 @@ public class TelegramService {
     @Async
     public void sendMessage(String message) {
         String url = String.format(
-                "https://api.telegram.org/bot%s/sendMessage",
+                ServiceStrings.Telegram.URL_FORMAT,
                 botToken
         );
 
         Map<String, String> body = new HashMap<>();
-        body.put("chat_id", chatId);
-        body.put("text", message);
-        body.put("parse_mode", "HTML");
+        body.put(ServiceStrings.Telegram.FIELD_CHAT_ID, chatId);
+        body.put(ServiceStrings.Telegram.FIELD_TEXT, message);
+        body.put(ServiceStrings.Telegram.FIELD_PARSE_MODE, ServiceStrings.Telegram.PARSE_MODE_HTML);
         restTemplate.postForEntity(url, body, String.class);
     }
 }
-

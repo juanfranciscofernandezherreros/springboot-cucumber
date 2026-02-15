@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.Set;
 
 import static com.fernandez.backend.utils.constants.AuthServiceConstants.*;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 
 @Service
 @RequiredArgsConstructor
@@ -179,13 +180,13 @@ public class AuthService {
                 saveUserToken(user, accessToken);
                 saveUserToken(user, newRefreshToken);
 
-                log.info("🔄 Token renovado con éxito para el usuario: {}", userEmail);
+                log.info(ServiceStrings.Auth.TOKEN_REFRESHED, userEmail);
 
                 return new TokenResponse(accessToken, newRefreshToken);
             }
         }
 
-        log.warn("⚠️ Intento de refresh token fallido o token inválido");
+        log.warn(ServiceStrings.Auth.REFRESH_FAILED);
         return null;
     }
 

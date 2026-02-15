@@ -1,6 +1,7 @@
 package com.fernandez.backend.service;
 
 import com.fernandez.backend.repository.TokenRepository;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,12 +21,12 @@ public class LogoutService implements LogoutHandler {
             HttpServletResponse response,
             Authentication authentication
     ) {
-        final String authHeader = request.getHeader("Authorization");
+        final String authHeader = request.getHeader(ServiceStrings.Common.AUTH_HEADER);
         final String jwt;
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader == null || !authHeader.startsWith(ServiceStrings.Common.BEARER_PREFIX)) {
             return;
         }
-        jwt = authHeader.substring(7);
+        jwt = authHeader.substring(ServiceStrings.Common.BEARER_PREFIX.length());
         var storedToken = tokenRepository.findByToken(jwt)
                 .orElse(null);
         if (storedToken != null) {

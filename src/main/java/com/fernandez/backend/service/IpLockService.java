@@ -1,6 +1,7 @@
 package com.fernandez.backend.service;
 
 import com.fernandez.backend.config.IpLockProperties;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,8 @@ public class IpLockService {
 
     private final StringRedisTemplate redisTemplate;
     private final IpLockProperties properties;
-    private static final String IP_PREFIX = "IP_ATTEMPT:";
-    private static final String IP_BLOCKED_PREFIX = "IP_BLOCKED:";
+    private static final String IP_PREFIX = ServiceStrings.IpLock.IP_PREFIX;
+    private static final String IP_BLOCKED_PREFIX = ServiceStrings.IpLock.IP_BLOCKED_PREFIX;
 
     @Autowired
     public IpLockService(@Autowired(required = false) StringRedisTemplate redisTemplate,
@@ -27,10 +28,10 @@ public class IpLockService {
     @PostConstruct
     public void checkConfig() {
         if (properties.isEnabled()) {
-            log.info("🛡️ SEGURIDAD: Bloqueo IP ACTIVADO. Máx Intentos: {}, Tiempo Bloqueo: {} min",
+            log.info(ServiceStrings.IpLock.LOG_ENABLED,
                     properties.getMaxAttempts(), properties.getLockTimeMinutes());
         } else {
-            log.warn("⚠️ SEGURIDAD: El sistema de bloqueo por IP (Redis) está DESACTIVADO desde config.");
+            log.warn(ServiceStrings.IpLock.LOG_DISABLED);
         }
     }
 
@@ -41,7 +42,7 @@ public class IpLockService {
         try {
             return Boolean.TRUE.equals(redisTemplate.hasKey(IP_BLOCKED_PREFIX + ip));
         } catch (Exception e) {
-            log.error("Error al consultar Redis (isIpBlocked): {}", e.getMessage());
+            log.error(ServiceStrings.IpLock.LOG_REDIS_ERROR_ISIP, e.getMessage());
             return false; // Fail open: si Redis falla, dejamos pasar
         }
     }
@@ -53,7 +54,7 @@ public class IpLockService {
             Long attempts = redisTemplate.opsForValue().increment(key);
             int maxAttempts = properties.getMaxAttempts();
             long lockTime = properties.getLockTimeMinutes();
-            log.info("🔍 REDIS: Intento fallido registrado para IP: {}. Intentos actuales: {}/{}", ip, attempts, maxAttempts);
+            log.info(ServiceStrings.IpLock.LOG_REDIS_ATTEMPT, ip, attempts, maxAttempts);
             if (attempts != null && attempts == 1) {
                 redisTemplate.expire(key, 1, TimeUnit.HOURS);
             }
@@ -62,10 +63,10 @@ public class IpLockService {
                 redisTemplate.opsForValue().set(IP_BLOCKED_PREFIX + ip, "true", lockTime, TimeUnit.MINUTES);
                 // Borramos el contador de intentos (ya no hace falta, está bloqueado)
                 redisTemplate.delete(key);
-                log.error("🚫 REDIS: ¡IP BLOQUEADA! -> {} por {} minutos", ip, lockTime);
+                log.error(ServiceStrings.IpLock.LOG_REDIS_BLOCK, ip, lockTime);
             }
         } catch (Exception e) {
-            log.error("❌ REDIS: Error al conectar con el servidor Redis: {}", e.getMessage());
+            log.error(ServiceStrings.IpLock.LOG_REDIS_CONNECTION_ERROR, e.getMessage());
         }
     }
 }

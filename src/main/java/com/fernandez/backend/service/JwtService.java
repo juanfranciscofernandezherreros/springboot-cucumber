@@ -3,6 +3,7 @@ package com.fernandez.backend.service;
 import com.fernandez.backend.model.Privilege;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -46,14 +47,14 @@ public class JwtService {
         // ============================================================
         Map<String, Object> claims = new java.util.HashMap<>();
 
-        claims.put("name", user.getName() != null ? user.getName() : "");
+        claims.put(ServiceStrings.Jwt.CLAIM_NAME, user.getName() != null ? user.getName() : ServiceStrings.Common.EMPTY);
 
         if (user.getRoles() != null) {
             // 1. Extraemos los nombres de los Roles (ej. ADMIN, PREMIUM)
             java.util.List<String> roleNames = user.getRoles().stream()
                     .map(Role::getName)
                     .collect(Collectors.toList());
-            claims.put("roles", roleNames);
+            claims.put(ServiceStrings.Jwt.CLAIM_ROLES, roleNames);
 
             // 2. EXTRAEMOS LOS PRIVILEGIOS (La magia del Many-to-Many)
             // Recorremos cada rol, entramos en su Set de privilegios y los unificamos
@@ -64,10 +65,10 @@ public class JwtService {
                     .collect(Collectors.toList());
 
             // Estas "authorities" son las que hasAuthority('...') buscará en el backend
-            claims.put("authorities", authorities);
+            claims.put(ServiceStrings.Jwt.CLAIM_AUTHORITIES, authorities);
         } else {
-            claims.put("roles", java.util.List.of());
-            claims.put("authorities", java.util.List.of());
+            claims.put(ServiceStrings.Jwt.CLAIM_ROLES, java.util.List.of());
+            claims.put(ServiceStrings.Jwt.CLAIM_AUTHORITIES, java.util.List.of());
         }
 
         return Jwts.builder()

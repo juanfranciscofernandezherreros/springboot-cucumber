@@ -10,6 +10,7 @@ import com.fernandez.backend.model.User;
 import com.fernandez.backend.repository.InvitationRepository;
 import com.fernandez.backend.repository.RoleRepository;
 import com.fernandez.backend.repository.UserRepository;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,7 @@ public class UserService {
         long blocked = userRepository.countByAccountNonLockedFalse();
         long pendingInvs = invitationRepository.countByStatus(InvitationStatus.PENDING);
 
-        log.info("MÉTRICAS: Total={}, Bloqueados={}, InvitacionesPendientes={}",
+        log.info(ServiceStrings.User.LOG_METRICS,
                 total, blocked, pendingInvs);
 
         return new UserStatsResponse(total, blocked, pendingInvs);
@@ -70,7 +71,7 @@ public class UserService {
         user.setLockCount(0);
         user.setLockTime(null);
 
-        log.info("ADMIN: Usuario {} desbloqueado", email);
+        log.info(ServiceStrings.User.LOG_ADMIN_UNLOCKED, email);
     }
 
     @Transactional
@@ -78,7 +79,7 @@ public class UserService {
         User user = getUserByEmail(email);
         user.setAccountNonLocked(false);
 
-        log.info("ADMIN: Usuario {} bloqueado", email);
+        log.info(ServiceStrings.User.LOG_ADMIN_LOCKED, email);
     }
 
     // =====================================================
@@ -89,11 +90,11 @@ public class UserService {
         User user = getUserById(id);
 
         if (isAdmin(user)) {
-            throw new RuntimeException("No está permitido eliminar a otros administradores.");
+            throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DELETE_ADMIN);
         }
 
         userRepository.delete(user);
-        log.info("ADMIN: Usuario con id {} eliminado", id);
+        log.info(ServiceStrings.User.LOG_ADMIN_DELETED, id);
     }
 
     @Transactional
@@ -102,16 +103,16 @@ public class UserService {
 
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() ->
-                        new RuntimeException("Rol no válido: " + roleName));
+                        new RuntimeException(ServiceStrings.User.ERR_INVALID_ROLE_PREFIX + roleName));
 
         if (isAdmin(user) && !role.getName().equals("ADMIN")) {
-            throw new RuntimeException("No puedes degradar a otro ADMIN.");
+            throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DEGRADE_ADMIN);
         }
 
         user.getRoles().clear();
         user.getRoles().add(role);
 
-        log.info("ADMIN: Rol de {} actualizado a {}", email, roleName);
+        log.info(ServiceStrings.User.LOG_ROLE_UPDATED, email, roleName);
     }
 
     @Transactional
@@ -119,7 +120,7 @@ public class UserService {
         User user = getUserById(id);
 
         if (isAdmin(user)) {
-            throw new RuntimeException("No está permitido modificar a otros administradores.");
+            throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_MODIFY_ADMIN);
         }
 
         if (request.name() != null) {
@@ -133,7 +134,7 @@ public class UserService {
         if (request.role() != null) {
             Role role = roleRepository.findByName(request.role())
                     .orElseThrow(() ->
-                            new RuntimeException("Rol no válido"));
+                            new RuntimeException(ServiceStrings.User.ERR_INVALID_ROLE_PREFIX));
 
             user.getRoles().clear();
             user.getRoles().add(role);
@@ -166,14 +167,14 @@ public class UserService {
     private User getUserByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuario no encontrado: " + email)
+                        new RuntimeException(ServiceStrings.User.ERR_USER_NOT_FOUND_PREFIX + email)
                 );
     }
 
     private User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Usuario no encontrado con id: " + id)
+                        new RuntimeException(ServiceStrings.User.ERR_USER_NOT_FOUND_ID_PREFIX + id)
                 );
     }
 
