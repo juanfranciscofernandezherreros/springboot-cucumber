@@ -17,7 +17,7 @@ import java.util.Map;
 @RestController
 @RequestMapping(ApiPaths.Admin.BASE)
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("isAuthenticated()")
 public class AdminController {
 
     private final IUserService userService;
@@ -61,7 +61,7 @@ public class AdminController {
 
     @GetMapping(ApiPaths.Admin.USER_STATUS)
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<AdminUserListResponseDto> getUserStatus(@RequestParam String email) {
+    public ResponseEntity<AdminUserListResponseDto> getUserStatus(@RequestParam(name = "email") String email) {
         return ResponseEntity.ok(userService.getUserStatus(email));
     }
 
@@ -76,7 +76,7 @@ public class AdminController {
     // =====================================================
     @PostMapping(ApiPaths.Admin.LOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> lockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> lockUser(@PathVariable(name = "email") String email) {
         userService.lockUser(email);
         AdminUserListResponseDto updatedUser = userService.getUserStatus(email);
 
@@ -90,7 +90,7 @@ public class AdminController {
 
     @PostMapping(ApiPaths.Admin.UNLOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> unLockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> unLockUser(@PathVariable(name = "email") String email) {
         userService.unlockUser(email);
         AdminUserListResponseDto updatedUser = userService.getUserStatus(email);
 
@@ -123,7 +123,7 @@ public class AdminController {
     @PutMapping(ApiPaths.Admin.UPDATE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:update')")
     public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> updateUser(
-            @PathVariable Long id,
+            @PathVariable(name = "id") Long id,
             @RequestBody AdminUpdateUserRequestDto request
     ) {
         AdminUserListResponseDto response = userService.updateUserByAdmin(id, request);
@@ -141,7 +141,7 @@ public class AdminController {
     // =====================================================
     @DeleteMapping(ApiPaths.Admin.DELETE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:delete')")
-    public ResponseEntity<AdminActionResponseDto<Long>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<AdminActionResponseDto<Long>> deleteUser(@PathVariable(name = "id") Long id) {
         userService.deleteUserById(id);
 
         return ResponseEntity.ok(
