@@ -1,9 +1,10 @@
 package com.fernandez.backend.config;
 
-import com.fernandez.backend.repository.InvitationRepository;
-import com.fernandez.backend.repository.PrivilegeRepository;
-import com.fernandez.backend.repository.RoleRepository;
-import com.fernandez.backend.repository.UserRepository;
+import com.fernandez.backend.infrastructure.config.UserDataInitializer;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.PrivilegeRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
