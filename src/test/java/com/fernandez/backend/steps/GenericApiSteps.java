@@ -200,16 +200,20 @@ public class GenericApiSteps {
         // Imprimimos el body para que tú mismo lo veas en la consola si falla
         System.out.println("🔍 [DEBUG LOGIN BODY]: " + body);
 
-        // Regex mejorado: Busca "access_token" o "accessToken", con o sin espacios
-        Pattern accessPattern = Pattern.compile("\"access_?token\"\\s*:\\s*\"([^\"]+)\"");
-        Pattern refreshPattern = Pattern.compile("\"refresh_?token\"\\s*:\\s*\"([^\"]+)\"");
+        // Aceptamos variantes comunes de naming (snake_case, camelCase, kebab-case)
+        Pattern accessPattern = Pattern.compile("\"(?:access[_-]?token|accessToken|token|jwt)\"\\s*:\\s*\"([^\"]+)\"");
+        Pattern refreshPattern = Pattern.compile("\"(?:refresh[_-]?token|refreshToken)\"\\s*:\\s*\"([^\"]+)\"");
 
         Matcher accessMatcher = accessPattern.matcher(body);
         Matcher refreshMatcher = refreshPattern.matcher(body);
 
         if (accessMatcher.find()) {
             GenericApiSteps.accessToken = accessMatcher.group(1);
-            System.out.println("✅ [v3] Access Token persistido: " + GenericApiSteps.accessToken.substring(0, 10) + "...");
+            if (GenericApiSteps.accessToken != null && GenericApiSteps.accessToken.length() > 12) {
+                System.out.println("✅ [TOKEN] Access persistido: " + GenericApiSteps.accessToken.substring(0, 10) + "...");
+            } else {
+                System.out.println("✅ [TOKEN] Access persistido.");
+            }
         }
 
         if (refreshMatcher.find()) {
@@ -217,9 +221,12 @@ public class GenericApiSteps {
         }
 
         // Si sigue siendo null, intentamos una captura bruta por si el JSON es simple
-        if (GenericApiSteps.accessToken == null && body.contains(".")) {
-            // Si el body es solo el token o tiene formato JWT, lo asignamos
-            if(body.split("\\.").length == 3) GenericApiSteps.accessToken = body.replace("\"", "");
+        if (GenericApiSteps.accessToken == null && body != null && body.contains(".")) {
+            String candidate = body.replace("\"", "").trim();
+            if (candidate.split("\\.").length == 3) {
+                GenericApiSteps.accessToken = candidate;
+                System.out.println("✅ [TOKEN] Access capturado en modo bruto (JWT directo).");
+            }
         }
     }
 
@@ -573,3 +580,4 @@ public class GenericApiSteps {
         throw new PendingException();
     }
 }
+
