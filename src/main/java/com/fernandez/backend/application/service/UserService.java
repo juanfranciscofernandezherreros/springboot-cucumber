@@ -1,6 +1,9 @@
 package com.fernandez.backend.application.service;
 
 import com.fernandez.backend.application.port.in.IUserService;
+import com.fernandez.backend.application.util.RoleValidator;
+import com.fernandez.backend.application.util.UserLookupHelper;
+import com.fernandez.backend.application.util.UserMapper;
 import com.fernandez.backend.domain.model.InvitationStatus;
 import com.fernandez.backend.domain.model.Role;
 import com.fernandez.backend.domain.model.User;
@@ -25,6 +28,7 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final InvitationRepository invitationRepository;
     private final RoleRepository roleRepository;
+    private final UserLookupHelper userLookupHelper;
 
     @Override
     public UserStatsResponseDto getUserStatistics() {
@@ -39,21 +43,21 @@ public class UserService implements IUserService {
 
     @Override
     public List<AdminUserListResponseDto> getAllUsers() {
-        return userRepository.findAll().stream().map(this::toAdminUserListResponse).toList();
+        return userRepository.findAll().stream().map(UserMapper::toAdminUserListResponse).toList();
     }
 
     @Override
     public List<AdminUserListResponseDto> getLockedUsers() {
         return userRepository.findAll().stream()
                 .filter(user -> !user.isAccountNonLocked())
-                .map(this::toAdminUserListResponse)
+                .map(UserMapper::toAdminUserListResponse)
                 .toList();
     }
 
     @Override
     @Transactional
     public void unlockUser(String email) {
-        User user = getUserByEmail(email);
+        User user = userLookupHelper.getUserByEmail(email);
         user.setAccountNonLocked(true);
         user.setFailedAttempt(0);
         user.setLockCount(0);
@@ -64,7 +68,7 @@ public class UserService implements IUserService {
     @Override
     @Transactional
     public void lockUser(String email) {
-        User user = getUserByEmail(email);
+        User user = userLookupHelper.getUserByEmail(email);
         user.setAccountNonLocked(false);
         log.info(ServiceStrings.User.LOG_ADMIN_LOCKED, email);
     }
@@ -72,8 +76,8 @@ public class UserService implements IUserService {
     @Override
     @Transactional
     public void deleteUserById(Long id) {
-        User user = getUserById(id);
-        if (isAdmin(user)) throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DELETE_ADMIN);
+        User user = userLookupHelper.getUserById(id);
+        if (RoleValidator.isAdmin(user)) throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DELETE_ADMIN);
         userRepository.delete(user);
         log.info(ServiceStrings.User.LOG_ADMIN_DELETED, id);
     }
@@ -81,11 +85,11 @@ public class UserService implements IUserService {
     @Override
     @Transactional
     public void updateUserRole(String email, String roleName) {
-        User user = getUserByEmail(email);
+        User user = userLookupHelper.getUserByEmail(email);
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException(ServiceStrings.User.ERR_INVALID_ROLE_PREFIX + roleName));
 
-        if (isAdmin(user) && !role.getName().equals("ADMIN")) {
+        if (RoleValidator.isAdmin(user) && !RoleValidator.hasRole(user, roleName)) {
             throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DEGRADE_ADMIN);
         }
 
@@ -97,8 +101,8 @@ public class UserService implements IUserService {
     @Override
     @Transactional
     public AdminUserListResponseDto updateUserByAdmin(Long id, AdminUpdateUserRequestDto request) {
-        User user = getUserById(id);
-        if (isAdmin(user)) throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_MODIFY_ADMIN);
+        User user = userLookupHelper.getUserById(id);
+        if (RoleValidator.isAdmin(user)) throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_MODIFY_ADMIN);
 
         if (request.name() != null) user.setName(request.name());
         if (request.accountNonLocked() != null) user.setAccountNonLocked(request.accountNonLocked());
@@ -110,46 +114,20 @@ public class UserService implements IUserService {
             user.getRoles().add(role);
         }
 
-        return toAdminUserListResponse(userRepository.save(user));
+        return UserMapper.toAdminUserListResponse(userRepository.save(user));
     }
 
     @Override
     @Transactional
     public AdminUserListResponseDto getUserStatus(String email) {
-        return toAdminUserListResponse(getUserByEmail(email));
+        return UserMapper.toAdminUserListResponse(userLookupHelper.getUserByEmail(email));
     }
 
     @Override
     @Transactional
     public User updateMyProfile(String email, UpdateUserRequestDto request) {
-        User user = getUserByEmail(email);
+        User user = userLookupHelper.getUserByEmail(email);
         user.setName(request.name());
         return userRepository.save(user);
-    }
-
-    private User getUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException(ServiceStrings.User.ERR_USER_NOT_FOUND_PREFIX + email));
-    }
-
-    private User getUserById(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(ServiceStrings.User.ERR_USER_NOT_FOUND_ID_PREFIX + id));
-    }
-
-    private boolean isAdmin(User user) {
-        return user.getRoles().stream().anyMatch(role -> role.getName().equals("ADMIN"));
-    }
-
-    private AdminUserListResponseDto toAdminUserListResponse(User user) {
-        return new AdminUserListResponseDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRoles().stream().map(Role::getName).toList(),
-                user.isAccountNonLocked(),
-                user.getFailedAttempt(),
-                user.getLockCount()
-        );
     }
 }

@@ -1,6 +1,10 @@
 package com.fernandez.backend.application.service;
 
 import com.fernandez.backend.application.port.in.*;
+import com.fernandez.backend.application.util.AccountLockingHelper;
+import com.fernandez.backend.application.util.TokenHeaderExtractor;
+import com.fernandez.backend.application.util.UserLookupHelper;
+import com.fernandez.backend.application.util.UserMapper;
 import com.fernandez.backend.domain.model.Role;
 import com.fernandez.backend.domain.model.Token;
 import com.fernandez.backend.domain.model.User;
@@ -42,6 +46,8 @@ public class AuthService implements IAuthService {
     private final IEmailService emailService;
     private final SecurityNotificationProperties notificationProperties;
     private final SecurityLockProperties lockProperties;
+    private final UserLookupHelper userLookupHelper;
+    private final AccountLockingHelper accountLockingHelper;
 
     private static final int MAX_FAILED_ATTEMPTS = 3;
 
@@ -109,7 +115,7 @@ public class AuthService implements IAuthService {
         User savedUser = userRepository.save(user);
         log.info(AuthServiceConstants.LOG_ADMIN_CREATED_USER, request.email(), role.getName());
 
-        return mapToAdminUserListResponse(savedUser);
+        return UserMapper.toAdminUserListResponse(savedUser);
     }
 
     @Override
@@ -139,7 +145,7 @@ public class AuthService implements IAuthService {
                     new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
 
-            resetAllAttempts(user);
+            accountLockingHelper.resetAllAttempts(user);
 
             String accessToken = jwtService.generateToken(user);
             String refreshToken = jwtService.generateRefreshToken(user);
@@ -160,11 +166,11 @@ public class AuthService implements IAuthService {
     @Override
     @Transactional
     public TokenResponseDto refreshToken(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith(AuthServiceConstants.TOKEN_PREFIX)) {
+        final String refreshToken = TokenHeaderExtractor.extractToken(authHeader);
+        if (refreshToken == null) {
             return null;
         }
 
-        final String refreshToken = authHeader.substring(AuthServiceConstants.TOKEN_PREFIX.length());
         final String userEmail = jwtService.extractUsername(refreshToken);
 
         if (userEmail == null) {
@@ -172,8 +178,7 @@ public class AuthService implements IAuthService {
             return null;
         }
 
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new RuntimeException(AuthServiceConstants.ERR_USER_NOT_FOUND));
+        User user = userLookupHelper.getUserByEmail(userEmail);
 
         Token storedToken = tokenRepository.findByToken(refreshToken).orElse(null);
 
@@ -203,10 +208,10 @@ public class AuthService implements IAuthService {
     @Override
     @Transactional
     public void logout(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith(AuthServiceConstants.TOKEN_PREFIX)) {
+        final String jwt = TokenHeaderExtractor.extractToken(authHeader);
+        if (jwt == null) {
             return;
         }
-        final String jwt = authHeader.substring(AuthServiceConstants.TOKEN_PREFIX.length());
         Token storedToken = tokenRepository.findByToken(jwt).orElse(null);
         if (storedToken != null) {
             storedToken.setExpired(true);
@@ -218,12 +223,11 @@ public class AuthService implements IAuthService {
     @Override
     @Transactional
     public TokenResponseDto resetPasswordFromProfile(String email, String newPassword) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException(AuthServiceConstants.ERR_USER_NOT_FOUND));
+        User user = userLookupHelper.getUserByEmail(email);
 
         user.setPassword(passwordEncoder.encode(newPassword));
         revokeAllUserTokens(user.getId());
-        resetAllAttempts(user);
+        accountLockingHelper.resetAllAttempts(user);
 
         String accessToken = jwtService.generateToken(user);
         String refreshToken = jwtService.generateRefreshToken(user);
@@ -240,41 +244,18 @@ public class AuthService implements IAuthService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateFailedAttempts(String email) {
-        userRepository.findByEmail(email).ifPresent(this::processFailedAttempt);
+        userRepository.findByEmail(email).ifPresent(user -> 
+                accountLockingHelper.processFailedAttempt(user, MAX_FAILED_ATTEMPTS));
     }
 
     @Override
     @Transactional
     public void unlockUser(User user) {
-        user.setAccountNonLocked(true);
-        user.setFailedAttempt(0);
-        userRepository.save(user);
-    }
-
-    private void processFailedAttempt(User user) {
-        int failedAttempts = user.getFailedAttempt() + 1;
-        user.setFailedAttempt(failedAttempts);
-
-        if (failedAttempts >= MAX_FAILED_ATTEMPTS) {
-            user.setAccountNonLocked(false);
-            user.setLockCount(user.getLockCount() + 1);
-            user.setLockTime(new Date());
-        }
-
-        userRepository.save(user);
+        accountLockingHelper.unlockUser(user);
     }
 
     private boolean shouldUnlock(User user, long durationMillis) {
-        if (user.getLockTime() == null) return true;
-        return user.getLockTime().getTime() + durationMillis < System.currentTimeMillis();
-    }
-
-    private void resetAllAttempts(User user) {
-        user.setFailedAttempt(0);
-        user.setLockCount(0);
-        user.setAccountNonLocked(true);
-        user.setLockTime(null);
-        userRepository.save(user);
+        return accountLockingHelper.shouldUnlock(user, durationMillis);
     }
 
     private void saveUserToken(User user, String jwtToken) {
@@ -296,15 +277,4 @@ public class AuthService implements IAuthService {
         tokenRepository.saveAll(tokens);
     }
 
-    private AdminUserListResponseDto mapToAdminUserListResponse(User user) {
-        return new AdminUserListResponseDto(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRoles().stream().map(Role::getName).toList(),
-                user.isAccountNonLocked(),
-                user.getFailedAttempt(),
-                user.getLockCount()
-        );
-    }
 }

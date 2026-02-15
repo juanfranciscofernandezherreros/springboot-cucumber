@@ -2,6 +2,8 @@ package com.fernandez.backend.infrastructure.config;
 
 import com.fernandez.backend.application.port.in.*;
 import com.fernandez.backend.application.service.*;
+import com.fernandez.backend.application.util.AccountLockingHelper;
+import com.fernandez.backend.application.util.UserLookupHelper;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.TokenRepository;
@@ -55,8 +57,18 @@ public class ServiceBeansConfig {
     }
 
     @Bean
-    public IUserService userService() {
-        return new UserService(userRepository, invitationRepository, roleRepository);
+    public UserLookupHelper userLookupHelper() {
+        return new UserLookupHelper(userRepository);
+    }
+
+    @Bean
+    public AccountLockingHelper accountLockingHelper() {
+        return new AccountLockingHelper(userRepository);
+    }
+
+    @Bean
+    public IUserService userService(UserLookupHelper userLookupHelper) {
+        return new UserService(userRepository, invitationRepository, roleRepository, userLookupHelper);
     }
 
     @Bean
@@ -65,7 +77,7 @@ public class ServiceBeansConfig {
     }
 
     @Bean
-    public IAuthService authService(PasswordEncoder passwordEncoder, IJwtService jwtService, AuthenticationManager authenticationManager, IIpLockService ipLockService, ITelegramService telegramService, IEmailService emailService) {
-        return new AuthService(userRepository, tokenRepository, passwordEncoder, jwtService, authenticationManager, ipLockService, roleRepository, telegramService, emailService, notificationProperties, lockProperties);
+    public IAuthService authService(PasswordEncoder passwordEncoder, IJwtService jwtService, AuthenticationManager authenticationManager, IIpLockService ipLockService, ITelegramService telegramService, IEmailService emailService, UserLookupHelper userLookupHelper, AccountLockingHelper accountLockingHelper) {
+        return new AuthService(userRepository, tokenRepository, passwordEncoder, jwtService, authenticationManager, ipLockService, roleRepository, telegramService, emailService, notificationProperties, lockProperties, userLookupHelper, accountLockingHelper);
     }
 }
