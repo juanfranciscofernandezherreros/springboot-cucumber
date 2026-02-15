@@ -10,6 +10,7 @@ import com.fernandez.backend.domain.model.User;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
+import com.fernandez.backend.shared.constants.AuthServiceConstants;
 import com.fernandez.backend.shared.constants.ServiceStrings;
 import com.fernandez.backend.shared.dto.AdminUpdateUserRequestDto;
 import com.fernandez.backend.shared.dto.AdminUserListResponseDto;
@@ -89,7 +90,7 @@ public class UserService implements IUserService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException(ServiceStrings.User.ERR_INVALID_ROLE_PREFIX + roleName));
 
-        if (RoleValidator.isAdmin(user) && !RoleValidator.hasRole(user, roleName)) {
+        if (RoleValidator.isAdmin(user) && !role.getName().equals(AuthServiceConstants.ROLE_ADMIN)) {
             throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DEGRADE_ADMIN);
         }
 

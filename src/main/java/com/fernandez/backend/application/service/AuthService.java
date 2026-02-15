@@ -244,8 +244,8 @@ public class AuthService implements IAuthService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateFailedAttempts(String email) {
-        userRepository.findByEmail(email).ifPresent(user -> 
-                accountLockingHelper.processFailedAttempt(user, MAX_FAILED_ATTEMPTS));
+        userRepository.findByEmail(email)
+                .ifPresent(user -> accountLockingHelper.processFailedAttempt(user, MAX_FAILED_ATTEMPTS));
     }
 
     @Override

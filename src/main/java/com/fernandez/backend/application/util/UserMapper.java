@@ -23,11 +23,11 @@ public final class UserMapper {
      *
      * @param user the User entity to map
      * @return the AdminUserListResponseDto with user information
-     * @throws NullPointerException if user is null
+     * @throws IllegalArgumentException if user is null
      */
     public static AdminUserListResponseDto toAdminUserListResponse(User user) {
         if (user == null) {
-            throw new NullPointerException("User cannot be null");
+            throw new IllegalArgumentException("User cannot be null");
         }
         
         return new AdminUserListResponseDto(
