@@ -1,14 +1,14 @@
 package com.fernandez.backend.config;
 
-import com.fernandez.backend.model.Invitation;
-import com.fernandez.backend.model.InvitationStatus;
-import com.fernandez.backend.model.Privilege;
-import com.fernandez.backend.model.Role;
-import com.fernandez.backend.model.User;
-import com.fernandez.backend.repository.InvitationRepository;
-import com.fernandez.backend.repository.PrivilegeRepository;
-import com.fernandez.backend.repository.RoleRepository;
-import com.fernandez.backend.repository.UserRepository;
+import com.fernandez.backend.domain.model.Invitation;
+import com.fernandez.backend.domain.model.InvitationStatus;
+import com.fernandez.backend.domain.model.Privilege;
+import com.fernandez.backend.domain.model.Role;
+import com.fernandez.backend.domain.model.User;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.PrivilegeRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
