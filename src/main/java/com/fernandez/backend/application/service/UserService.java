@@ -90,7 +90,7 @@ public class UserService implements IUserService {
         Role role = roleRepository.findByName(roleName)
                 .orElseThrow(() -> new RuntimeException(ServiceStrings.User.ERR_INVALID_ROLE_PREFIX + roleName));
 
-        if (RoleValidator.isAdmin(user) && !roleName.equals(AuthServiceConstants.ROLE_ADMIN)) {
+        if (RoleValidator.isAdmin(user) && !role.getName().equals(AuthServiceConstants.ROLE_ADMIN)) {
             throw new RuntimeException(ServiceStrings.User.ERR_CANNOT_DEGRADE_ADMIN);
         }
 
