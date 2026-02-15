@@ -3,8 +3,8 @@ package com.fernandez.backend.controller;
 import com.fernandez.backend.dto.CreateInvitationRequest;
 import com.fernandez.backend.model.Invitation;
 import com.fernandez.backend.model.InvitationStatus;
-import com.fernandez.backend.model.Role;
 import com.fernandez.backend.repository.InvitationRepository;
+import com.fernandez.backend.utils.constants.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -21,14 +21,14 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/v1/admin/invitations")
+@RequestMapping(ApiPaths.Invitations.BASE)
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
 public class InvitationController {
 
     private final InvitationRepository invitationRepository;
 
-    @GetMapping("/all")
+    @GetMapping(ApiPaths.Invitations.ALL)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getAll(
             @RequestParam(required = false) List<InvitationStatus> statuses) {
@@ -39,19 +39,19 @@ public class InvitationController {
         return ResponseEntity.ok(invitationRepository.findByStatusInOrderByCreatedAtDesc(statuses));
     }
 
-    @GetMapping("/statuses")
+    @GetMapping(ApiPaths.Invitations.STATUSES)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<InvitationStatus>> getAvailableStatuses() {
         return ResponseEntity.ok(Arrays.asList(InvitationStatus.values()));
     }
 
-    @GetMapping("/pending")
+    @GetMapping(ApiPaths.Invitations.PENDING)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getPendingInvitations() {
         return ResponseEntity.ok(invitationRepository.findByStatusOrderByCreatedAtDesc(InvitationStatus.PENDING));
     }
 
-    @GetMapping("/history")
+    @GetMapping(ApiPaths.Invitations.HISTORY)
     @PreAuthorize("hasAuthority('admin:read')")
     public ResponseEntity<List<Invitation>> getHistory() {
         return ResponseEntity.ok(invitationRepository.findByStatusNotOrderByCreatedAtDesc(InvitationStatus.PENDING));
@@ -89,7 +89,7 @@ public class InvitationController {
     }
 
 
-    @PatchMapping("/{id}/status")
+    @PatchMapping(ApiPaths.Invitations.UPDATE_STATUS)
     @PreAuthorize("hasAuthority('admin:update')")
     @Transactional
     public ResponseEntity<?> updateStatus(
@@ -117,7 +117,7 @@ public class InvitationController {
     /**
      * Elimina una invitación permanentemente.
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping(ApiPaths.Invitations.DELETE)
     @PreAuthorize("hasAuthority('admin:delete')")
     @Transactional
     public ResponseEntity<Void> deleteInvitation(@PathVariable Long id) {
@@ -133,7 +133,7 @@ public class InvitationController {
      * Modifica los datos de una invitación existente.
      * Normalmente se restringe a campos informativos, no al email o token.
      */
-    @PutMapping("/{id}")
+    @PutMapping(ApiPaths.Invitations.UPDATE)
     @PreAuthorize("hasAuthority('admin:update')")
     @Transactional
     public ResponseEntity<?> updateInvitation(

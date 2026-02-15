@@ -4,7 +4,7 @@ import com.fernandez.backend.dto.*;
 import com.fernandez.backend.model.User;
 import com.fernandez.backend.service.AuthService;
 import com.fernandez.backend.service.UserService;
-import com.fernandez.backend.utils.constants.UserApiPaths;
+import com.fernandez.backend.utils.constants.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(UserApiPaths.BASE)
+@RequestMapping(ApiPaths.Users.BASE)
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('USER')")
 public class UserController {
@@ -24,7 +24,7 @@ public class UserController {
     private final UserService userService;
     private final AuthService service;
 
-    @GetMapping(UserApiPaths.ME)
+    @GetMapping(ApiPaths.Users.ME)
     public ResponseEntity<UserResponse> getMyProfile(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
@@ -42,7 +42,7 @@ public class UserController {
     }
 
 
-    @PutMapping(UserApiPaths.UPDATE)
+    @PutMapping(ApiPaths.Users.UPDATE)
     public ResponseEntity<UserResponse> updateMyProfile(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody UpdateUserRequest request
@@ -63,7 +63,7 @@ public class UserController {
     }
 
 
-    @PostMapping("/me/password")
+    @PostMapping(ApiPaths.Users.CHANGE_PASSWORD)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> changeMyPassword(
             @RequestBody ResetPasswordRequest request,
