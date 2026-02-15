@@ -11,3 +11,6 @@ premium@test.com,user123,Juan Premium,PREMIUM,"movie:stream:4k|movie:stream:hd|m
 user2@test.com,user123,Usuario Dos,USER,"movie:stream:hd|course:access:java"
 user3@test.com,user123,Usuario Tres,USER,"movie:stream:hd|course:access:java"
 user4@test.com,user123,Usuario Cuatro,USER,"movie:stream:hd|course:access:java"
+usuario2_login@test.com,user123,Usuario2 Login,USER,"movie:stream:hd|course:access:java"
+admin_mgmt_lock_read_update@test.com,admin123,Admin Mgmt Lock Read Update,ADMIN_MGMT_LOCK,"admin:read|admin:update"
+admin_mgmt_target_lock_01@test.com,user123,Admin Mgmt Target Lock 01,USER,"movie:stream:hd|course:access:java"

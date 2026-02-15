@@ -5,7 +5,7 @@ Feature: Gestión Extendida de Usuarios para Administradores
     Given v2 envío una petición POST a "/auth/login" con el cuerpo:
       """
       {
-        "email": "admin_update@test.com",
+        "email": "admin_mgmt_lock_read_update@test.com",
         "password": "admin123"
       }
       """
