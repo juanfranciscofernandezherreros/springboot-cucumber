@@ -4,6 +4,7 @@ import com.fernandez.backend.domain.model.Invitation;
 import com.fernandez.backend.domain.model.InvitationStatus;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
 import com.fernandez.backend.shared.constants.ApiPaths;
+ import com.fernandez.backend.shared.constants.ServiceStrings;
 import com.fernandez.backend.shared.dto.CreateInvitationRequestDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +71,7 @@ public class InvitationController {
                 request.email(), InvitationStatus.PENDING)) {
 
             return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body("Ya existe una invitación pendiente para este correo.");
+                    .body(ServiceStrings.Invitation.ERR_PENDING_EXISTS);
         }
 
         Invitation invitation = Invitation.builder()
@@ -100,12 +101,12 @@ public class InvitationController {
                 .map(invitation -> {
                     if (!invitation.getStatus().canTransitionTo(newStatus)) {
                         return ResponseEntity.status(HttpStatus.CONFLICT)
-                                .body("Transición no permitida: de " + invitation.getStatus() + " a " + newStatus);
+                                .body(ServiceStrings.Invitation.ERR_INVALID_TRANSITION_PREFIX + invitation.getStatus() + " a " + newStatus);
                     }
 
                     invitation.setStatus(newStatus);
                     invitationRepository.save(invitation);
-                    return ResponseEntity.ok("Estado actualizado a " + newStatus);
+                    return ResponseEntity.ok(ServiceStrings.Invitation.OK_STATUS_UPDATED_PREFIX + newStatus);
                 })
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -125,7 +126,7 @@ public class InvitationController {
             return ResponseEntity.notFound().build();
         }
         invitationRepository.deleteById(id);
-        log.info("Invitación con ID {} eliminada por el administrador", id);
+        log.info(ServiceStrings.Invitation.INFO_DELETED, id);
         return ResponseEntity.noContent().build();
     }
 
@@ -147,7 +148,7 @@ public class InvitationController {
                     // Si permites cambiar el email, recuerda validar duplicados aquí
 
                     invitationRepository.save(invitation);
-                    log.info("Invitación {} actualizada con éxito", id);
+                    log.info(ServiceStrings.Invitation.INFO_UPDATED, id);
                     return ResponseEntity.ok(invitation);
                 })
                 .orElse(ResponseEntity.notFound().build());

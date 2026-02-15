@@ -83,4 +83,19 @@ public final class ServiceStrings {
         public static final String ERR_USER_NOT_FOUND_ID_PREFIX = "Usuario no encontrado con id: ";
         public static final String ROLE_ADMIN = "ADMIN";
     }
+
+    public static final class Filter {
+        private Filter() {}
+        public static final String LOG_REQUEST = "Request {} {}";
+        public static final String LOG_RESPONSE = "Response status={} for {} {}";
+    }
+
+    public static final class Invitation {
+        private Invitation() {}
+        public static final String ERR_PENDING_EXISTS = "Ya existe una invitación pendiente para este correo.";
+        public static final String ERR_INVALID_TRANSITION_PREFIX = "Transición no permitida: de ";
+        public static final String INFO_DELETED = "Invitación con ID {} eliminada por el administrador";
+        public static final String INFO_UPDATED = "Invitación {} actualizada con éxito";
+        public static final String OK_STATUS_UPDATED_PREFIX = "Estado actualizado a ";
+    }
 }

@@ -12,6 +12,23 @@ app:
       role-updated: "Rol de %s actualizado a %s"
       user-deleted: "Usuario con id %d eliminado correctamente."
       user-created: "Usuario %s creado correctamente"
+  cors:
+    mapping: "/**"
+    allowed-origins:
+      - "http://localhost:3000"
+      - "http://localhost:8087"
+    allowed-methods:
+      - "GET"
+      - "POST"
+      - "PUT"
+      - "PATCH"
+      - "DELETE"
+      - "OPTIONS"
+    allowed-headers:
+      - "*"
+    exposed-headers:
+      - "Authorization"
+    allow-credentials: true
 server:
   port: 8087
 telegram:

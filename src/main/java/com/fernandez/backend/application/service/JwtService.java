@@ -4,6 +4,7 @@ import com.fernandez.backend.application.port.in.IJwtService;
 import com.fernandez.backend.domain.model.Privilege;
 import com.fernandez.backend.domain.model.Role;
 import com.fernandez.backend.domain.model.User;
+import com.fernandez.backend.infrastructure.config.properties.JwtProperties;
 import com.fernandez.backend.shared.constants.ServiceStrings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -11,7 +12,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.security.Key;
@@ -26,23 +26,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class JwtService implements IJwtService {
 
-    @Value("${application.security.jwt.secret-key}")
-    private String secretKey;
-
-    @Value("${application.security.jwt.expiration}")
-    private long jwtExpiration;
-
-    @Value("${application.security.jwt.refresh-token.expiration}")
-    private long refreshExpiration;
+    private final JwtProperties jwtProperties;
 
     @Override
     public String generateToken(User user) {
-        return buildToken(user, jwtExpiration);
+        return buildToken(user, jwtProperties.getExpiration());
     }
 
     @Override
     public String generateRefreshToken(User user) {
-        return buildToken(user, refreshExpiration);
+        return buildToken(user, jwtProperties.getRefreshToken().getExpiration());
     }
 
     private String buildToken(User user, long expiration) {
@@ -106,7 +99,7 @@ public class JwtService implements IJwtService {
     }
 
     private Key getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes = Decoders.BASE64.decode(jwtProperties.getSecretKey());
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
