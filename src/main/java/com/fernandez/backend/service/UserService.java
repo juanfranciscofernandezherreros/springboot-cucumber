@@ -1,9 +1,9 @@
 package com.fernandez.backend.service;
 
-import com.fernandez.backend.dto.AdminUpdateUserRequest;
-import com.fernandez.backend.dto.AdminUserListResponse;
-import com.fernandez.backend.dto.UpdateUserRequest;
-import com.fernandez.backend.dto.UserStatsResponse;
+import com.fernandez.backend.dto.AdminUpdateUserRequestDto;
+import com.fernandez.backend.dto.AdminUserListResponseDto;
+import com.fernandez.backend.dto.UpdateUserRequestDto;
+import com.fernandez.backend.dto.UserStatsResponseDto;
 import com.fernandez.backend.model.InvitationStatus;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
@@ -28,7 +28,7 @@ public class UserService implements IUserService {
     // =====================================================
     // MÉTRICAS
     // =====================================================
-    public UserStatsResponse getUserStatistics() {
+    public UserStatsResponseDto getUserStatistics() {
         long total = userRepository.count();
         long blocked = userRepository.countByAccountNonLockedFalse();
         long pendingInvs = invitationRepository.countByStatus(InvitationStatus.PENDING);
@@ -36,20 +36,20 @@ public class UserService implements IUserService {
         log.info(ServiceStrings.User.LOG_METRICS,
                 total, blocked, pendingInvs);
 
-        return new UserStatsResponse(total, blocked, pendingInvs);
+        return new UserStatsResponseDto(total, blocked, pendingInvs);
     }
 
     // =====================================================
     // LISTADOS (ADMIN)
     // =====================================================
-    public List<AdminUserListResponse> getAllUsers() {
+    public List<AdminUserListResponseDto> getAllUsers() {
         return userRepository.findAll()
                 .stream()
                 .map(this::toAdminUserListResponse)
                 .toList();
     }
 
-    public List<AdminUserListResponse> getLockedUsers() {
+    public List<AdminUserListResponseDto> getLockedUsers() {
         return userRepository.findAll()
                 .stream()
                 .filter(user -> !user.isAccountNonLocked())
@@ -114,7 +114,7 @@ public class UserService implements IUserService {
     }
 
     @Transactional
-    public AdminUserListResponse updateUserByAdmin(Long id, AdminUpdateUserRequest request) {
+    public AdminUserListResponseDto updateUserByAdmin(Long id, AdminUpdateUserRequestDto request) {
         User user = getUserById(id);
 
         if (isAdmin(user)) {
@@ -138,25 +138,22 @@ public class UserService implements IUserService {
             user.getRoles().add(role);
         }
 
-        return toAdminUserListResponse(user);
+        return toAdminUserListResponse(userRepository.save(user));
     }
 
     // =====================================================
     // PERFIL / ESTADO DE USUARIO
     // =====================================================
-    public AdminUserListResponse getUserStatus(String email) {
+    @Transactional
+    public AdminUserListResponseDto getUserStatus(String email) {
         return toAdminUserListResponse(getUserByEmail(email));
     }
 
     @Transactional
-    public User updateMyProfile(String email, UpdateUserRequest request) {
+    public User updateMyProfile(String email, UpdateUserRequestDto request) {
         User user = getUserByEmail(email);
-
-        if (request.name() != null) {
-            user.setName(request.name());
-        }
-
-        return user;
+        user.setName(request.name());
+        return userRepository.save(user);
     }
 
     // =====================================================
@@ -181,18 +178,15 @@ public class UserService implements IUserService {
                 .anyMatch(role -> role.getName().equals("ADMIN"));
     }
 
-    private AdminUserListResponse toAdminUserListResponse(User user) {
-        return AdminUserListResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .roles(
-                        user.getRoles().stream()
-                                .map(Role::getName)
-                                .toList()
-                )
-                .accountNonLocked(user.isAccountNonLocked())
-                .failedAttempt(user.getFailedAttempt())
-                .build();
+    private AdminUserListResponseDto toAdminUserListResponse(User user) {
+        return new AdminUserListResponseDto(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRoles().stream().map(Role::getName).toList(),
+                user.isAccountNonLocked(),
+                user.getFailedAttempt(),
+                user.getLockCount()
+        );
     }
 }

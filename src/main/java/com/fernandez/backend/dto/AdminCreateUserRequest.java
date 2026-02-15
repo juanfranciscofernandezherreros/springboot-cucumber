@@ -1,10 +1,8 @@
 package com.fernandez.backend.dto;
 
-
-public record AdminCreateUserRequest(
-        String name,
-        String email,
-        String password,
-        String role
-) {}
-
+/**
+ * Usa {@link AdminCreateUserRequestDto}.
+ */
+class AdminCreateUserRequest {
+    private AdminCreateUserRequest() {}
+}

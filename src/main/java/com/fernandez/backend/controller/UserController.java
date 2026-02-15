@@ -25,17 +25,17 @@ public class UserController {
     private final IAuthService service;
 
     @GetMapping(ApiPaths.Users.ME)
-    public ResponseEntity<UserResponse> getMyProfile(
+    public ResponseEntity<UserResponseDto> getMyProfile(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        AdminUserListResponse user =
+        AdminUserListResponseDto user =
                 userService.getUserStatus(userDetails.getUsername());
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRoles()
+        UserResponseDto response = new UserResponseDto(
+                user.id(),
+                user.name(),
+                user.email(),
+                user.roles()
         );
 
         return ResponseEntity.ok(response);
@@ -43,14 +43,14 @@ public class UserController {
 
 
     @PutMapping(ApiPaths.Users.UPDATE)
-    public ResponseEntity<UserResponse> updateMyProfile(
+    public ResponseEntity<UserResponseDto> updateMyProfile(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody UpdateUserRequest request
+            @RequestBody UpdateUserRequestDto request
     ) {
         User updatedUser =
                 userService.updateMyProfile(userDetails.getUsername(), request);
 
-        UserResponse response = new UserResponse(
+        UserResponseDto response = new UserResponseDto(
                 updatedUser.getId(),
                 updatedUser.getName(),
                 updatedUser.getEmail(),
@@ -66,12 +66,12 @@ public class UserController {
     @PostMapping(ApiPaths.Users.CHANGE_PASSWORD)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> changeMyPassword(
-            @RequestBody ResetPasswordRequest request,
+            @RequestBody ResetPasswordRequestDto request,
             Authentication authentication
     ) {
         String email = authentication.getName();
 
-        TokenResponse tokens =
+        TokenResponseDto tokens =
                 service.resetPasswordFromProfile(email, request.newPassword());
 
         return ResponseEntity.ok(

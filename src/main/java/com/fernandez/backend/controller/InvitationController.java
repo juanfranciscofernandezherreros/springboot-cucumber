@@ -1,6 +1,6 @@
 package com.fernandez.backend.controller;
 
-import com.fernandez.backend.dto.CreateInvitationRequest;
+import com.fernandez.backend.dto.CreateInvitationRequestDto;
 import com.fernandez.backend.model.Invitation;
 import com.fernandez.backend.model.InvitationStatus;
 import com.fernandez.backend.repository.InvitationRepository;
@@ -64,7 +64,7 @@ public class InvitationController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @Transactional
-    public ResponseEntity<?> createInvitation(@RequestBody CreateInvitationRequest request) {
+    public ResponseEntity<?> createInvitation(@RequestBody CreateInvitationRequestDto request) {
 
         if (invitationRepository.existsByEmailAndStatus(
                 request.email(), InvitationStatus.PENDING)) {
@@ -138,7 +138,7 @@ public class InvitationController {
     @Transactional
     public ResponseEntity<?> updateInvitation(
             @PathVariable Long id,
-            @RequestBody CreateInvitationRequest request) {
+            @RequestBody CreateInvitationRequestDto request) {
 
         return invitationRepository.findById(id)
                 .map(invitation -> {

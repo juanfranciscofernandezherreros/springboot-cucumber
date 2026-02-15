@@ -1,8 +1,8 @@
 package com.fernandez.backend.controller;
 
 import com.fernandez.backend.dto.LoginRequest;
-import com.fernandez.backend.dto.RegisterRequest;
-import com.fernandez.backend.dto.TokenResponse;
+import com.fernandez.backend.dto.RegisterRequestDto;
+import com.fernandez.backend.dto.TokenResponseDto;
 import com.fernandez.backend.service.IAuthService;
 import com.fernandez.backend.utils.constants.ApiPaths;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,7 +21,7 @@ public class AuthController {
 
     @PostMapping(ApiPaths.Auth.REGISTER)
     public ResponseEntity<Void> register(
-            @RequestBody RegisterRequest request,
+            @RequestBody RegisterRequestDto request,
             HttpServletRequest httpRequest
     ) {
         String clientIp = httpRequest.getRemoteAddr();
@@ -30,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping(ApiPaths.Auth.LOGIN)
-    public ResponseEntity<TokenResponse> authenticate(
+    public ResponseEntity<TokenResponseDto> authenticate(
             @RequestBody LoginRequest request,
             HttpServletRequest httpRequest
     ) {
@@ -39,10 +39,10 @@ public class AuthController {
     }
 
     @PostMapping(ApiPaths.Auth.REFRESH_TOKEN)
-    public ResponseEntity<TokenResponse> refreshToken(
+    public ResponseEntity<TokenResponseDto> refreshToken(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
     ) {
-        TokenResponse response = service.refreshToken(authHeader);
+        TokenResponseDto response = service.refreshToken(authHeader);
         return response == null
                 ? ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
                 : ResponseEntity.ok(response);

@@ -29,15 +29,15 @@ public class AdminController {
     // =====================================================
     @PostMapping(ApiPaths.Admin.CREATE_USER)
     @PreAuthorize("hasAuthority('admin:create')")
-    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> createUserFromPanel(
-            @RequestBody AdminCreateUserRequest request
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> createUserFromPanel(
+            @RequestBody AdminCreateUserRequestDto request
     ) {
-        AdminUserListResponse newUser = authService.registerByAdmin(request);
+        AdminUserListResponseDto newUser = authService.registerByAdmin(request);
 
         String template = msg.getUserCreated();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                AdminActionResponse.<AdminUserListResponse>builder()
+                AdminActionResponseDto.<AdminUserListResponseDto>builder()
                         .mensaje(String.format(template, request.email()))
                         .data(newUser)
                         .build()
@@ -49,25 +49,25 @@ public class AdminController {
     // =====================================================
     @GetMapping(ApiPaths.Admin.USERS)
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<List<AdminUserListResponse>> getAllUsers() {
+    public ResponseEntity<List<AdminUserListResponseDto>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
     @GetMapping(ApiPaths.Admin.LOCKED_USERS)
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<List<AdminUserListResponse>> getLockedUsers() {
+    public ResponseEntity<List<AdminUserListResponseDto>> getLockedUsers() {
         return ResponseEntity.ok(userService.getLockedUsers());
     }
 
     @GetMapping(ApiPaths.Admin.USER_STATUS)
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<AdminUserListResponse> getUserStatus(@RequestParam String email) {
+    public ResponseEntity<AdminUserListResponseDto> getUserStatus(@RequestParam String email) {
         return ResponseEntity.ok(userService.getUserStatus(email));
     }
 
     @GetMapping(ApiPaths.Admin.STATS)
     @PreAuthorize("hasAuthority('admin:read')")
-    public ResponseEntity<UserStatsResponse> getUserStats() {
+    public ResponseEntity<UserStatsResponseDto> getUserStats() {
         return ResponseEntity.ok(userService.getUserStatistics());
     }
 
@@ -76,12 +76,12 @@ public class AdminController {
     // =====================================================
     @PostMapping(ApiPaths.Admin.LOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> lockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> lockUser(@PathVariable String email) {
         userService.lockUser(email);
-        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+        AdminUserListResponseDto updatedUser = userService.getUserStatus(email);
 
         return ResponseEntity.ok(
-                AdminActionResponse.<AdminUserListResponse>builder()
+                AdminActionResponseDto.<AdminUserListResponseDto>builder()
                         .mensaje(String.format(msg.getUserLocked(), email))
                         .data(updatedUser)
                         .build()
@@ -90,12 +90,12 @@ public class AdminController {
 
     @PostMapping(ApiPaths.Admin.UNLOCK_USER + "/{email}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> unLockUser(@PathVariable String email) {
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> unLockUser(@PathVariable String email) {
         userService.unlockUser(email);
-        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+        AdminUserListResponseDto updatedUser = userService.getUserStatus(email);
 
         return ResponseEntity.ok(
-                AdminActionResponse.<AdminUserListResponse>builder()
+                AdminActionResponseDto.<AdminUserListResponseDto>builder()
                         .mensaje(String.format(msg.getUserUnlocked(), email))
                         .data(updatedUser)
                         .build()
@@ -104,16 +104,16 @@ public class AdminController {
 
     @PutMapping(ApiPaths.Admin.UPDATE_ROLE)
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> updateRole(
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> updateRole(
             @RequestBody Map<String, String> request
     ) {
         String email = request.get("email");
         String roleName = request.get("role").toUpperCase();
         userService.updateUserRole(email, roleName);
-        AdminUserListResponse updatedUser = userService.getUserStatus(email);
+        AdminUserListResponseDto updatedUser = userService.getUserStatus(email);
 
         return ResponseEntity.ok(
-                AdminActionResponse.<AdminUserListResponse>builder()
+                AdminActionResponseDto.<AdminUserListResponseDto>builder()
                         .mensaje(String.format(msg.getRoleUpdated(), email, roleName))
                         .data(updatedUser)
                         .build()
@@ -122,14 +122,14 @@ public class AdminController {
 
     @PutMapping(ApiPaths.Admin.UPDATE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:update')")
-    public ResponseEntity<AdminActionResponse<AdminUserListResponse>> updateUser(
+    public ResponseEntity<AdminActionResponseDto<AdminUserListResponseDto>> updateUser(
             @PathVariable Long id,
-            @RequestBody AdminUpdateUserRequest request
+            @RequestBody AdminUpdateUserRequestDto request
     ) {
-        AdminUserListResponse response = userService.updateUserByAdmin(id, request);
+        AdminUserListResponseDto response = userService.updateUserByAdmin(id, request);
 
         return ResponseEntity.ok(
-                AdminActionResponse.<AdminUserListResponse>builder()
+                AdminActionResponseDto.<AdminUserListResponseDto>builder()
                         .mensaje("Usuario actualizado correctamente") // Puedes añadirlo a Properties
                         .data(response)
                         .build()
@@ -141,11 +141,11 @@ public class AdminController {
     // =====================================================
     @DeleteMapping(ApiPaths.Admin.DELETE_USER + "/{id}")
     @PreAuthorize("hasAuthority('admin:delete')")
-    public ResponseEntity<AdminActionResponse<Long>> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<AdminActionResponseDto<Long>> deleteUser(@PathVariable Long id) {
         userService.deleteUserById(id);
 
         return ResponseEntity.ok(
-                AdminActionResponse.<Long>builder()
+                AdminActionResponseDto.<Long>builder()
                         .mensaje(String.format(msg.getUserDeleted(), id))
                         .data(id)
                         .build()

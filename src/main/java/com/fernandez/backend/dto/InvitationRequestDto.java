@@ -1,4 +1,4 @@
 package com.fernandez.backend.dto;
 
-public class InvitationRequestDto {
+public record InvitationRequestDto() {
 }

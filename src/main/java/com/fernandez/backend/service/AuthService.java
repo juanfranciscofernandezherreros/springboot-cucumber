@@ -51,7 +51,7 @@ public class AuthService implements IAuthService {
     }
 
     @Transactional
-    public void registerPublic(RegisterRequest request, String clientIp) {
+    public void registerPublic(RegisterRequestDto request, String clientIp) {
         if (ipLockService.isIpBlocked(clientIp)) throw new IpBlockedException();
 
         if (request.role() != null) {
@@ -86,7 +86,7 @@ public class AuthService implements IAuthService {
     }
 
     @Transactional
-    public AdminUserListResponse registerByAdmin(AdminCreateUserRequest request) {
+    public AdminUserListResponseDto registerByAdmin(AdminCreateUserRequestDto request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new UserAlreadyExistsException(String.format(ERR_USER_ALREADY_EXISTS, request.email()));
         }
@@ -110,7 +110,7 @@ public class AuthService implements IAuthService {
         return mapToAdminUserListResponse(savedUser);
     }
 
-    public TokenResponse login(LoginRequest request, String clientIp) {
+    public TokenResponseDto login(LoginRequest request, String clientIp) {
         if (ipLockService.isIpBlocked(clientIp)) throw new IpBlockedException();
 
         var user = userRepository.findByEmail(request.email())
@@ -139,7 +139,7 @@ public class AuthService implements IAuthService {
             revokeAllUserTokens(user.getId());
             saveUserToken(user, accessToken);
             saveUserToken(user, refreshToken);
-            return new TokenResponse(accessToken, refreshToken);
+            return new TokenResponseDto(accessToken, refreshToken);
         } catch (BadCredentialsException e) {
             updateFailedAttempts(request.email());
             ipLockService.registerFailedAttempt(clientIp);
@@ -148,7 +148,7 @@ public class AuthService implements IAuthService {
     }
 
     @Transactional
-    public TokenResponse refreshToken(String authHeader) {
+    public TokenResponseDto refreshToken(String authHeader) {
         // 1. Validación básica del header
         if (authHeader == null || !authHeader.startsWith(TOKEN_PREFIX)) {
             return null;
@@ -181,7 +181,7 @@ public class AuthService implements IAuthService {
 
                 log.info(ServiceStrings.Auth.TOKEN_REFRESHED, userEmail);
 
-                return new TokenResponse(accessToken, newRefreshToken);
+                return new TokenResponseDto(accessToken, newRefreshToken);
             }
         }
 
@@ -189,35 +189,8 @@ public class AuthService implements IAuthService {
         return null;
     }
 
-    private void processFailedAttempt(User user) {
-        int attempts = user.getFailedAttempt() + 1;
-        user.setFailedAttempt(attempts);
-
-        if (attempts >= MAX_FAILED_ATTEMPTS) {
-            user.setAccountNonLocked(false);
-            user.setLockTime(new Date());
-            user.setLockCount(user.getLockCount() + 1);
-            user.setFailedAttempt(0);
-            log.warn(LOG_USER_LOCKED, user.getEmail(), user.getLockCount());
-        }
-        userRepository.saveAndFlush(user);
-    }
-
     @Transactional
-    public void logout(String authHeader) {
-        if (authHeader == null || !authHeader.startsWith(TOKEN_PREFIX)) return;
-
-        tokenRepository.findByToken(authHeader.substring(7)).ifPresent(token -> {
-            token.setExpired(true);
-            token.setRevoked(true);
-            tokenRepository.save(token);
-            SecurityContextHolder.clearContext();
-            log.info(LOG_LOGOUT);
-        });
-    }
-
-    @Transactional
-    public TokenResponse resetPasswordFromProfile(String email, String newPassword) {
+    public TokenResponseDto resetPasswordFromProfile(String email, String newPassword) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
         user.setPassword(passwordEncoder.encode(newPassword));
         revokeAllUserTokens(user.getId());
@@ -230,18 +203,19 @@ public class AuthService implements IAuthService {
 
         userRepository.save(user);
         log.info(LOG_PASSWORD_UPDATED, email);
-        return new TokenResponse(accessToken, refreshToken);
+        return new TokenResponseDto(accessToken, refreshToken);
     }
 
-    private AdminUserListResponse mapToAdminUserListResponse(User user) {
-        return AdminUserListResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .roles(user.getRoles().stream().map(Role::getName).toList())
-                .accountNonLocked(user.isAccountNonLocked())
-                .failedAttempt(user.getFailedAttempt())
-                .build();
+    private AdminUserListResponseDto mapToAdminUserListResponse(User user) {
+        return new AdminUserListResponseDto(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getRoles().stream().map(Role::getName).toList(),
+                user.isAccountNonLocked(),
+                user.getFailedAttempt(),
+                user.getLockCount()
+        );
     }
 
     // --- Métodos de apoyo ---
