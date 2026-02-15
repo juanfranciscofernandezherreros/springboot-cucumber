@@ -1,6 +1,6 @@
 package com.fernandez.backend.infrastructure.config;
 
-import com.fernandez.backend.infrastructure.config.properties.CorsProps;
+import com.fernandez.backend.infrastructure.config.properties.CorsDbProps;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -39,7 +39,9 @@ public class BeanConfig {
 
     @Bean
     @Primary
-    public CorsConfigurationSource corsConfigurationSource(CorsProps corsProps) {
+    public CorsConfigurationSource corsConfigurationSource(CorsPropsProvider provider) {
+        CorsDbProps corsProps = provider.getCors();
+
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(corsProps.getAllowedOrigins());
         config.setAllowedMethods(corsProps.getAllowedMethods());
