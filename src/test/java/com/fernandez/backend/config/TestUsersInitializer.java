@@ -1,5 +1,6 @@
 package com.fernandez.backend.config;
 
+import com.fernandez.backend.infrastructure.config.UserDataInitializer;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.PrivilegeRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
