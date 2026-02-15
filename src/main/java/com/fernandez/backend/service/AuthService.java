@@ -288,7 +288,7 @@ public class AuthService {
     @Transactional
     public TotpSetupResponse setupTotp(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
 
         // Generar un nuevo secreto Base32
         String secret = twoFactorService.generateSecretBase32();
@@ -301,7 +301,7 @@ public class AuthService {
         // Generar la URL del código QR
         String qrCodeUrl = twoFactorService.generateQrCodeUrl(email, secret);
 
-        log.info("TOTP configurado para usuario: {}", email);
+        log.info(LOG_TOTP_SETUP, email);
         return new TotpSetupResponse(secret, qrCodeUrl);
     }
 
@@ -311,20 +311,20 @@ public class AuthService {
     @Transactional
     public void enableTotp(String email, String code) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
 
         if (user.getTotpSecret() == null) {
-            throw new IllegalStateException("Debe configurar TOTP primero");
+            throw new IllegalStateException(ERR_TOTP_NOT_SETUP);
         }
 
         // Validar el código de 6 dígitos
         if (!twoFactorService.validateCode(user.getTotpSecret(), code)) {
-            throw new BadCredentialsException("Código TOTP inválido");
+            throw new BadCredentialsException(ERR_TOTP_INVALID_CODE);
         }
 
         user.setTotpEnabled(true);
         userRepository.save(user);
-        log.info("TOTP habilitado para usuario: {}", email);
+        log.info(LOG_TOTP_ENABLED, email);
     }
 
     /**
@@ -333,12 +333,12 @@ public class AuthService {
     @Transactional
     public void disableTotp(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
 
         user.setTotpEnabled(false);
         user.setTotpSecret(null);
         userRepository.save(user);
-        log.info("TOTP deshabilitado para usuario: {}", email);
+        log.info(LOG_TOTP_DISABLED, email);
     }
 
     /**
@@ -346,7 +346,7 @@ public class AuthService {
      */
     public TotpStatusResponse getTotpStatus(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
         return new TotpStatusResponse(user.isTotpEnabled());
     }
 
@@ -360,18 +360,18 @@ public class AuthService {
         var user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> {
                     ipLockService.registerFailedAttempt(clientIp);
-                    return new BadCredentialsException("Credenciales incorrectas");
+                    return new BadCredentialsException(ERR_BAD_CREDENTIALS);
                 });
 
         if (!user.isAccountNonLocked()) {
             long duration = getLockDuration(user.getLockCount());
-            if (duration == -1L) throw new LockedException("Cuenta bloqueada permanentemente");
+            if (duration == -1L) throw new LockedException(ERR_ACCOUNT_LOCKED_PERM);
 
             if (shouldUnlock(user)) {
                 unlockUser(user);
             } else {
                 long timeLeft = (user.getLockTime().getTime() + duration) - System.currentTimeMillis();
-                throw new LockedException(String.format("Cuenta bloqueada. Tiempo restante: %d segundos", timeLeft / 1000));
+                throw new LockedException(String.format(ERR_ACCOUNT_LOCKED_TEMP, timeLeft / 1000));
             }
         }
 
@@ -385,7 +385,7 @@ public class AuthService {
             if (user.isTotpEnabled()) {
                 if (request.totpCode() == null || !twoFactorService.validateCode(user.getTotpSecret(), request.totpCode())) {
                     ipLockService.registerFailedAttempt(clientIp);
-                    throw new BadCredentialsException("Código TOTP inválido");
+                    throw new BadCredentialsException(ERR_TOTP_INVALID_CODE);
                 }
             }
 

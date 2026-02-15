@@ -38,7 +38,8 @@ class TwoFactorServiceTest {
         // Then
         assertNotNull(qrCodeUrl);
         assertTrue(qrCodeUrl.startsWith("otpauth://totp/"));
-        assertTrue(qrCodeUrl.contains(email));
+        // Email is URL-encoded, so @ becomes %40
+        assertTrue(qrCodeUrl.contains("test%40example.com"));
         assertTrue(qrCodeUrl.contains(secret));
         assertTrue(qrCodeUrl.contains("issuer=SpringBoot-Security"));
         assertTrue(qrCodeUrl.contains("digits=6"));
@@ -89,6 +90,7 @@ class TwoFactorServiceTest {
         // Then
         assertNotNull(qrCodeUrl);
         assertTrue(qrCodeUrl.startsWith("otpauth://totp/"));
-        assertTrue(qrCodeUrl.contains(email));
+        // Special characters should be URL-encoded: + becomes %2B, @ becomes %40
+        assertTrue(qrCodeUrl.contains("test%2Bspecial%40example.com"));
     }
 }

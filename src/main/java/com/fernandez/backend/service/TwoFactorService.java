@@ -41,16 +41,22 @@ public class TwoFactorService {
      * @return URL en formato otpauth://
      */
     public String generateQrCodeUrl(String email, String secret) {
-        return String.format(
-                "otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=%s&digits=%d&period=%d",
-                ISSUER,
-                email,
-                secret,
-                ISSUER,
-                HashingAlgorithm.SHA1,
-                6,
-                30
-        );
+        try {
+            String encodedEmail = java.net.URLEncoder.encode(email, java.nio.charset.StandardCharsets.UTF_8);
+            return String.format(
+                    "otpauth://totp/%s:%s?secret=%s&issuer=%s&algorithm=%s&digits=%d&period=%d",
+                    ISSUER,
+                    encodedEmail,
+                    secret,
+                    ISSUER,
+                    HashingAlgorithm.SHA1,
+                    6,
+                    30
+            );
+        } catch (Exception e) {
+            log.error("Error encoding email for QR code URL", e);
+            throw new RuntimeException("Failed to generate QR code URL", e);
+        }
     }
 
     /**
@@ -61,20 +67,20 @@ public class TwoFactorService {
      */
     public boolean validateCode(String secret, String code) {
         if (secret == null || code == null) {
-            log.warn("Intento de validación con secreto o código nulo");
+            log.warn("Validation attempt with null secret or code");
             return false;
         }
         
         try {
             boolean isValid = codeVerifier.isValidCode(secret, code);
             if (isValid) {
-                log.info("Código TOTP validado correctamente");
+                log.info("TOTP code validated successfully");
             } else {
-                log.warn("Código TOTP inválido");
+                log.warn("Invalid TOTP code");
             }
             return isValid;
         } catch (Exception e) {
-            log.error("Error al validar código TOTP", e);
+            log.error("Error validating TOTP code", e);
             return false;
         }
     }

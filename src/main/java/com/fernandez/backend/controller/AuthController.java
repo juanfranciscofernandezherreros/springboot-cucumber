@@ -56,9 +56,7 @@ public class AuthController {
     public ResponseEntity<TotpSetupResponse> setupTotp(
             @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
     ) {
-        // Extraer el email del token JWT
-        String token = authHeader.substring(7);
-        // Aquí deberías extraer el email del token, pero por simplicidad usaremos el contexto de seguridad
+        // Extraer el email del contexto de seguridad
         String email = org.springframework.security.core.context.SecurityContextHolder.getContext()
                 .getAuthentication().getName();
         return ResponseEntity.ok(service.setupTotp(email));

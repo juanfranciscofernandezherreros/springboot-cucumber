@@ -16,6 +16,8 @@ public class AuthServiceConstants {
     public static final String ERR_BAD_CREDENTIALS = "Credenciales inválidas";
     public static final String ERR_ACCOUNT_LOCKED_PERM = "Cuenta bloqueada permanentemente. Contacte con soporte.";
     public static final String ERR_ACCOUNT_LOCKED_TEMP = "Cuenta bloqueada. Inténtelo en %d segundos.";
+    public static final String ERR_TOTP_NOT_SETUP = "Debe configurar TOTP primero";
+    public static final String ERR_TOTP_INVALID_CODE = "Código TOTP inválido";
 
     // --- Notificaciones: Email ---
     public static final String EMAIL_SUBJECT_WELCOME = "Bienvenido a la plataforma";
@@ -32,6 +34,9 @@ public class AuthServiceConstants {
     public static final String LOG_USER_LOCKED = "Usuario {} bloqueado (nivel {})";
     public static final String LOG_LOGOUT = "Logout realizado";
     public static final String LOG_PASSWORD_UPDATED = "🔐 Contraseña actualizada desde perfil para {}";
+    public static final String LOG_TOTP_SETUP = "TOTP configurado para usuario: {}";
+    public static final String LOG_TOTP_ENABLED = "TOTP habilitado para usuario: {}";
+    public static final String LOG_TOTP_DISABLED = "TOTP deshabilitado para usuario: {}";
 
     // --- Varios ---
     public static final String TOKEN_PREFIX = "Bearer ";
