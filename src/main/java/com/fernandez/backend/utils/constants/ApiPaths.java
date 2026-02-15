@@ -55,6 +55,57 @@ public final class ApiPaths {
         private Audit() {}
         public static final String BASE = API_V1 + "/admin/audit";
         public static final String HISTORY = "/history";
+        public static final String PATTERN = BASE + "/**";
+    }
+
+    // =========================
+    // PATRONES DE SEGURIDAD
+    // =========================
+    public static final class Security {
+        // Public routes
+        public static final String PUBLIC_ROOT = "/";
+        public static final String PUBLIC_INDEX = "/index.html";
+        public static final String PUBLIC_STATIC = "/static/**";
+        public static final String PUBLIC_AUTH = ApiPaths.Auth.BASE + "/**";
+        public static final String PUBLIC_SWAGGER_UI = "/swagger-ui/**";
+        public static final String PUBLIC_OPENAPI_DOCS = "/v3/api-docs/**";
+        public static final String PUBLIC_H2_CONSOLE = "/h2-console/**";
+
+        // Invitation patterns
+        public static final String INVITATIONS_PATTERN = ApiPaths.Invitations.BASE + "/**";
+
+        // Admin GET patterns
+        public static final String ADMIN_USERS_GET = ApiPaths.Admin.BASE + ApiPaths.Admin.USERS;
+        public static final String ADMIN_USER_STATUS_GET = ApiPaths.Admin.BASE + ApiPaths.Admin.USER_STATUS;
+        public static final String ADMIN_STATS_GET = ApiPaths.Admin.BASE + ApiPaths.Admin.STATS;
+        public static final String ADMIN_LOCKED_USERS_GET = ApiPaths.Admin.BASE + ApiPaths.Admin.LOCKED_USERS;
+
+        // Admin POST patterns
+        public static final String ADMIN_LOCK_USER_PATTERN = ApiPaths.Admin.BASE + ApiPaths.Admin.LOCK_USER + "/**";
+        public static final String ADMIN_UNLOCK_USER_PATTERN = ApiPaths.Admin.BASE + ApiPaths.Admin.UNLOCK_USER + "/**";
+        public static final String ADMIN_CREATE_USER = ApiPaths.Admin.BASE + ApiPaths.Admin.CREATE_USER;
+
+        // Admin PUT patterns
+        public static final String ADMIN_UPDATE_USER_PATTERN = ApiPaths.Admin.BASE + ApiPaths.Admin.UPDATE_USER + "/**";
+        public static final String ADMIN_UPDATE_ROLE = ApiPaths.Admin.BASE + ApiPaths.Admin.UPDATE_ROLE;
+
+        // Admin DELETE patterns
+        public static final String ADMIN_DELETE_USER_PATTERN = ApiPaths.Admin.BASE + ApiPaths.Admin.DELETE_USER + "/**";
+
+        // Audit patterns
+        public static final String AUDIT_PATTERN = ApiPaths.Audit.BASE + "/**";
+
+        // User patterns
+        public static final String USERS_ME_PATTERN = ApiPaths.Users.BASE + ApiPaths.Users.ME + "/**";
+        public static final String USERS_UPDATE = ApiPaths.Users.BASE + ApiPaths.Users.UPDATE;
+        public static final String USERS_CHANGE_PASSWORD = ApiPaths.Users.BASE + ApiPaths.Users.CHANGE_PASSWORD;
+
+        // Admin fallback
+        public static final String ADMIN_PATTERN = ApiPaths.Admin.BASE + "/**";
+
+        // Logout
+        public static final String LOGOUT = ApiPaths.Auth.BASE + ApiPaths.Auth.LOGOUT;
+
+        private Security() {}
     }
 }
-

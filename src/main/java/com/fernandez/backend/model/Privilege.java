@@ -24,14 +24,6 @@ public class Privilege {
     @EqualsAndHashCode.Include
     private String name;
 
-    @ManyToMany(fetch = FetchType.EAGER) // Eager para que al cargar el Rol ya traiga sus permisos
-    @JoinTable(
-            name = "roles_privileges",
-            joinColumns = @JoinColumn(name = "role_id"),
-            inverseJoinColumns = @JoinColumn(name = "privilege_id")
-    )
-    @ToString.Exclude
-    private Set<Privilege> privileges = new HashSet<>();
 
     @ManyToMany(mappedBy = "privileges")
     @ToString.Exclude
