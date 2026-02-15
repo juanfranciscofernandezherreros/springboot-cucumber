@@ -1,6 +1,6 @@
 package com.fernandez.backend.infrastructure.config;
 
-import com.fernandez.backend.application.port.in.ILogoutService;
+import com.fernandez.backend.infrastructure.config.properties.CorsProps;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -14,8 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.List;
 
 @Configuration
 public class BeanConfig {
@@ -41,16 +39,16 @@ public class BeanConfig {
 
     @Bean
     @Primary
-    public CorsConfigurationSource corsConfigurationSource() {
+    public CorsConfigurationSource corsConfigurationSource(CorsProps corsProps) {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:8087"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setExposedHeaders(List.of("Authorization"));
-        config.setAllowCredentials(true);
+        config.setAllowedOrigins(corsProps.getAllowedOrigins());
+        config.setAllowedMethods(corsProps.getAllowedMethods());
+        config.setAllowedHeaders(corsProps.getAllowedHeaders());
+        config.setExposedHeaders(corsProps.getExposedHeaders());
+        config.setAllowCredentials(corsProps.isAllowCredentials());
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
+        source.registerCorsConfiguration(corsProps.getMapping(), config);
         return source;
     }
 }

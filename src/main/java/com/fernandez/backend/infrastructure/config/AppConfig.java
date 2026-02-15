@@ -1,5 +1,6 @@
 package com.fernandez.backend.infrastructure.config;
 
+import com.fernandez.backend.shared.constants.AppStrings;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +17,6 @@ public class AppConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return username -> userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new UsernameNotFoundException(AppStrings.Security.USER_NOT_FOUND));
     }
 }

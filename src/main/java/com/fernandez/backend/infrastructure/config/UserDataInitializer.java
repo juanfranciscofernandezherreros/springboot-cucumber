@@ -1,10 +1,8 @@
 package com.fernandez.backend.infrastructure.config;
 
 import com.fernandez.backend.domain.model.*;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.PrivilegeRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
-import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
+import com.fernandez.backend.infrastructure.persistence.jpa.repository.*;
+import com.fernandez.backend.shared.constants.OperationMessageKeys;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.Instant;
@@ -19,7 +17,8 @@ public class UserDataInitializer {
             RoleRepository roleRepository,
             InvitationRepository invitationRepository,
             PrivilegeRepository privilegeRepository,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            OperationMessageRepository operationMessageRepository
     ) {
         // --- 1. PRIVILEGIOS ---
         Privilege view4k = createPrivilegeIfNotExist(privilegeRepository, "movie:stream:4k");
@@ -71,6 +70,9 @@ public class UserDataInitializer {
         createInvitation(invitationRepository, "invitado@test.com", "Nuevo Cinefilo", "Interesado en catálogo de terror", InvitationStatus.PENDING);
         // Invitación para user3 (para que el test pueda capturar el ID si lo necesitas desde ahí)
         createInvitation(invitationRepository, "user3@test.com", "Usuario Tres", "Estado inicial", InvitationStatus.ACCEPTED);
+
+        // --- 5. MENSAJES OPERACIONALES (i18n) ---
+        seedOperationMessages(operationMessageRepository);
     }
 
     /* MÉTODOS AUXILIARES */
@@ -118,5 +120,43 @@ public class UserDataInitializer {
                     .build();
             repo.save(invitation);
         }
+    }
+
+    private static void seedOperationMessages(OperationMessageRepository repo) {
+        // Español
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_CREATED, "es", "Usuario %s creado correctamente");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "es", "Usuario %s ha sido bloqueado correctamente.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "es", "Usuario %s ha sido desbloqueado correctamente.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_ROLE_UPDATED, "es", "Rol de %s actualizado a %s");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UPDATED, "es", "Usuario actualizado correctamente");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "es", "Usuario con id %d eliminado correctamente.");
+        upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "es", "Contraseña actualizada");
+
+        // Inglés
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_CREATED, "en", "User %s created successfully");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "en", "User %s has been locked successfully.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "en", "User %s has been unlocked successfully.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_ROLE_UPDATED, "en", "Role for %s updated to %s");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UPDATED, "en", "User updated successfully");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "en", "User with id %d deleted successfully.");
+        upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "en", "Password updated");
+
+        // Catalán
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_CREATED, "ca", "Usuari %s creat correctament");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_LOCKED, "ca", "Usuari %s bloquejat correctament.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UNLOCKED, "ca", "Usuari %s desbloquejat correctament.");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_ROLE_UPDATED, "ca", "Rol de %s actualitzat a %s");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_UPDATED, "ca", "Usuari actualitzat correctament");
+        upsertMessage(repo, OperationMessageKeys.ADMIN_USER_DELETED, "ca", "Usuari amb id %d eliminat correctament.");
+        upsertMessage(repo, OperationMessageKeys.USER_PASSWORD_CHANGED, "ca", "Contrasenya actualitzada");
+    }
+
+    private static void upsertMessage(OperationMessageRepository repo, String key, String lang, String text) {
+        repo.findByKeyAndLang(key, lang)
+                .or(() -> java.util.Optional.of(new OperationMessage(key, lang, text)))
+                .ifPresent(m -> {
+                    m.setText(text);
+                    repo.save(m);
+                });
     }
 }

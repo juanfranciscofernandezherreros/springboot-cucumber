@@ -4,6 +4,8 @@ import com.fernandez.backend.application.port.in.*;
 import com.fernandez.backend.application.service.*;
 import com.fernandez.backend.application.util.AccountLockingHelper;
 import com.fernandez.backend.application.util.UserLookupHelper;
+import com.fernandez.backend.infrastructure.config.properties.JwtProperties;
+import com.fernandez.backend.infrastructure.config.properties.TelegramProperties;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.InvitationRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.RoleRepository;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.TokenRepository;
@@ -30,10 +32,12 @@ public class ServiceBeansConfig {
     private final IpLockProperties ipLockProperties;
     private final SecurityNotificationProperties notificationProperties;
     private final SecurityLockProperties lockProperties;
+    private final JwtProperties jwtProperties;
+    private final TelegramProperties telegramProperties;
 
     @Bean
     public IJwtService jwtService() {
-        return new JwtService();
+        return new JwtService(jwtProperties);
     }
 
     @Bean
@@ -53,7 +57,7 @@ public class ServiceBeansConfig {
 
     @Bean
     public ITelegramService telegramService() {
-        return new TelegramService();
+        return new TelegramService(telegramProperties);
     }
 
     @Bean

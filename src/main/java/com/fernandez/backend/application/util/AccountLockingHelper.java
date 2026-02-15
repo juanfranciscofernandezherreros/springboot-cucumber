@@ -4,7 +4,6 @@ import com.fernandez.backend.domain.model.User;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
 import java.util.Date;
 
 /**

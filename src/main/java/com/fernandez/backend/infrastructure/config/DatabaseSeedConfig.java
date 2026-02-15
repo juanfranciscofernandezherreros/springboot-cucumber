@@ -1,28 +1,26 @@
-package com.fernandez.backend.config;
+package com.fernandez.backend.infrastructure.config;
 
-import com.fernandez.backend.infrastructure.config.UserDataInitializer;
 import com.fernandez.backend.infrastructure.persistence.jpa.repository.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 
-@Component
-@Profile("test")
+@Configuration
 @RequiredArgsConstructor
-public class TestUsersInitializer implements ApplicationRunner {
+public class DatabaseSeedConfig {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-    private final PrivilegeRepository privilegeRepository;
     private final InvitationRepository invitationRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final PrivilegeRepository privilegeRepository;
     private final OperationMessageRepository operationMessageRepository;
-    @Override
-    public void run(ApplicationArguments args) {
-        UserDataInitializer.init(
+    private final PasswordEncoder passwordEncoder;
+
+    @Bean
+    public ApplicationRunner seedDatabase() {
+        return args -> UserDataInitializer.init(
                 userRepository,
                 roleRepository,
                 invitationRepository,
@@ -32,3 +30,4 @@ public class TestUsersInitializer implements ApplicationRunner {
         );
     }
 }
+

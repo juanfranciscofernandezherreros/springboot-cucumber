@@ -5,6 +5,8 @@ import com.fernandez.backend.application.port.in.IUserService;
 import com.fernandez.backend.domain.model.User;
 import com.fernandez.backend.shared.constants.ApiPaths;
 import com.fernandez.backend.shared.dto.*;
+import com.fernandez.backend.application.util.OperationMessages;
+import com.fernandez.backend.shared.constants.OperationMessageKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -23,6 +25,7 @@ public class UserController {
 
     private final IUserService userService;
     private final IAuthService service;
+    private final OperationMessages messages;
 
     @GetMapping(ApiPaths.Users.ME)
     public ResponseEntity<UserResponseDto> getMyProfile(
@@ -76,12 +79,10 @@ public class UserController {
 
         return ResponseEntity.ok(
                 Map.of(
-                        "mensaje", "Contraseña actualizada",
+                        "mensaje", messages.get(OperationMessageKeys.USER_PASSWORD_CHANGED),
                         "access_token", tokens.accessToken(),
                         "refresh_token", tokens.refreshToken()
                 )
         );
     }
-
-
 }

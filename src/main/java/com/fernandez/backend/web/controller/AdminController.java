@@ -2,8 +2,9 @@ package com.fernandez.backend.web.controller;
 
 import com.fernandez.backend.application.port.in.IAuthService;
 import com.fernandez.backend.application.port.in.IUserService;
-import com.fernandez.backend.infrastructure.config.AdminMessagesProperties;
+import com.fernandez.backend.application.util.OperationMessages;
 import com.fernandez.backend.shared.constants.ApiPaths;
+import com.fernandez.backend.shared.constants.OperationMessageKeys;
 import com.fernandez.backend.shared.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -22,7 +23,7 @@ public class AdminController {
 
     private final IUserService userService;
     private final IAuthService authService;
-    private final AdminMessagesProperties msg;
+    private final OperationMessages messages;
 
     // =====================================================
     // CREATE (admin:create)
@@ -34,11 +35,9 @@ public class AdminController {
     ) {
         AdminUserListResponseDto newUser = authService.registerByAdmin(request);
 
-        String template = msg.getUserCreated();
-
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 AdminActionResponseDto.<AdminUserListResponseDto>builder()
-                        .mensaje(String.format(template, request.email()))
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_USER_CREATED, request.email()))
                         .data(newUser)
                         .build()
         );
@@ -82,7 +81,7 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 AdminActionResponseDto.<AdminUserListResponseDto>builder()
-                        .mensaje(String.format(msg.getUserLocked(), email))
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_USER_LOCKED, email))
                         .data(updatedUser)
                         .build()
         );
@@ -96,7 +95,7 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 AdminActionResponseDto.<AdminUserListResponseDto>builder()
-                        .mensaje(String.format(msg.getUserUnlocked(), email))
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_USER_UNLOCKED, email))
                         .data(updatedUser)
                         .build()
         );
@@ -114,7 +113,7 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 AdminActionResponseDto.<AdminUserListResponseDto>builder()
-                        .mensaje(String.format(msg.getRoleUpdated(), email, roleName))
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_ROLE_UPDATED, email, roleName))
                         .data(updatedUser)
                         .build()
         );
@@ -130,7 +129,7 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 AdminActionResponseDto.<AdminUserListResponseDto>builder()
-                        .mensaje("Usuario actualizado correctamente") // Puedes añadirlo a Properties
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_USER_UPDATED))
                         .data(response)
                         .build()
         );
@@ -146,7 +145,7 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 AdminActionResponseDto.<Long>builder()
-                        .mensaje(String.format(msg.getUserDeleted(), id))
+                        .mensaje(messages.get(OperationMessageKeys.ADMIN_USER_DELETED, id))
                         .data(id)
                         .build()
         );
