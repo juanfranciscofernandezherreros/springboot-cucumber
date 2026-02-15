@@ -1,4 +1,4 @@
-package com.fernandez.backend.service;
+package com.fernandez.backend.service.impl;
 
 import com.fernandez.backend.dto.AuditLogDto;
 import com.fernandez.backend.dto.InvitationAuditSnapshotDto;
@@ -6,36 +6,34 @@ import com.fernandez.backend.dto.UserAuditSnapshotDto;
 import com.fernandez.backend.model.Invitation;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
+import com.fernandez.backend.service.IAuditService;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.hibernate.envers.AuditReader;
 import org.hibernate.envers.AuditReaderFactory;
 import org.hibernate.envers.DefaultRevisionEntity;
 import org.hibernate.envers.RevisionType;
-import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
-@Service
 @RequiredArgsConstructor
-public class AuditService {
+public class AuditService implements IAuditService {
 
     private final EntityManager entityManager;
 
+    @Override
+    @SuppressWarnings("unchecked")
     public List<AuditLogDto> getGlobalAuditHistory() {
         AuditReader reader = AuditReaderFactory.get(entityManager);
         List<AuditLogDto> history = new ArrayList<>();
 
-        List<Class<?>> monitoredEntities = List.of(
-                User.class,
-                Invitation.class
-        );
+        List<Class<?>> monitoredEntities = List.of(User.class, Invitation.class);
 
         for (Class<?> entityClass : monitoredEntities) {
-
-            List<Object[]> results = reader.createQuery()
+            List<Object[]> results = (List<Object[]>) reader.createQuery()
                     .forRevisionsOfEntity(entityClass, false, true)
                     .getResultList();
 
@@ -45,9 +43,9 @@ public class AuditService {
                 RevisionType revisionType = (RevisionType) row[2];
 
                 history.add(AuditLogDto.builder()
-                        .revInfo("REV-" + revision.getId())
+                        .revInfo(ServiceStrings.Audit.REV_PREFIX + revision.getId())
                         .timestamp(revision.getRevisionDate().toString())
-                        .author("admin") // Sustituir por CustomRevisionEntity si lo tienes
+                        .author(ServiceStrings.Audit.DEFAULT_AUTHOR)
                         .operation(revisionType.name())
                         .entityName(entityClass.getSimpleName())
                         .description(extractIdentifier(entity))
@@ -56,29 +54,17 @@ public class AuditService {
             }
         }
 
-        // Ordenar: más reciente primero
-        history.sort(
-                Comparator.comparing(AuditLogDto::getTimestamp).reversed()
-        );
-
+        history.sort(Comparator.comparing(AuditLogDto::timestamp).reversed());
         return history;
     }
 
-    // =====================================================
-    // SNAPSHOT MAPPER (CLAVE)
-    // =====================================================
     private Object toSnapshot(Object entity) {
-
         if (entity instanceof User u) {
             return UserAuditSnapshotDto.builder()
                     .id(u.getId())
                     .name(u.getName())
                     .email(u.getEmail())
-                    .roles(
-                            u.getRoles().stream()
-                                    .map(Role::getName)
-                                    .toList()
-                    )
+                    .roles(u.getRoles().stream().map(Role::getName).toList())
                     .accountNonLocked(u.isAccountNonLocked())
                     .build();
         }
@@ -94,16 +80,9 @@ public class AuditService {
         return null;
     }
 
-    // =====================================================
-    // DESCRIPCIÓN HUMANA
-    // =====================================================
     private String extractIdentifier(Object entity) {
-        if (entity instanceof User u) {
-            return "User: " + u.getEmail();
-        }
-        if (entity instanceof Invitation i) {
-            return "Inv: " + i.getEmail();
-        }
-        return "ID: " + entity.hashCode();
+        if (entity instanceof User u) return ServiceStrings.Audit.DESC_USER_PREFIX + u.getEmail();
+        if (entity instanceof Invitation i) return ServiceStrings.Audit.DESC_INV_PREFIX + i.getEmail();
+        return ServiceStrings.Audit.DESC_ID_PREFIX + entity.hashCode();
     }
 }

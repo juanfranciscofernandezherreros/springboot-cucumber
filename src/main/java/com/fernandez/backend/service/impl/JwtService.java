@@ -1,26 +1,30 @@
-package com.fernandez.backend.service;
+package com.fernandez.backend.service.impl;
 
 import com.fernandez.backend.model.Privilege;
 import com.fernandez.backend.model.Role;
 import com.fernandez.backend.model.User;
+import com.fernandez.backend.service.IJwtService;
+import com.fernandez.backend.utils.constants.ServiceStrings;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-@Service
-public class JwtService {
+// Sin @Service: este bean se crea explícitamente en ServiceBeansConfig
+@RequiredArgsConstructor
+public class JwtService implements IJwtService {
 
     @Value("${application.security.jwt.secret-key}")
     private String secretKey;
@@ -31,43 +35,35 @@ public class JwtService {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
+    @Override
     public String generateToken(User user) {
         return buildToken(user, jwtExpiration);
     }
 
+    @Override
     public String generateRefreshToken(User user) {
         return buildToken(user, refreshExpiration);
     }
 
     private String buildToken(User user, long expiration) {
+        Map<String, Object> claims = new HashMap<>();
 
-        // ============================================================
-        // CLAIMS DINÁMICOS: ROLES Y PRIVILEGIOS (AUTHORITIES)
-        // ============================================================
-        Map<String, Object> claims = new java.util.HashMap<>();
-
-        claims.put("name", user.getName() != null ? user.getName() : "");
+        claims.put(ServiceStrings.Jwt.CLAIM_NAME, user.getName() != null ? user.getName() : ServiceStrings.Common.EMPTY);
 
         if (user.getRoles() != null) {
-            // 1. Extraemos los nombres de los Roles (ej. ADMIN, PREMIUM)
-            java.util.List<String> roleNames = user.getRoles().stream()
-                    .map(Role::getName)
-                    .collect(Collectors.toList());
-            claims.put("roles", roleNames);
+            var roleNames = user.getRoles().stream().map(Role::getName).collect(Collectors.toList());
+            claims.put(ServiceStrings.Jwt.CLAIM_ROLES, roleNames);
 
-            // 2. EXTRAEMOS LOS PRIVILEGIOS (La magia del Many-to-Many)
-            // Recorremos cada rol, entramos en su Set de privilegios y los unificamos
-            java.util.List<String> authorities = user.getRoles().stream()
+            var authorities = user.getRoles().stream()
                     .flatMap(role -> role.getPrivileges().stream())
                     .map(Privilege::getName)
-                    .distinct() // Evitamos duplicados si dos roles comparten un privilegio
+                    .distinct()
                     .collect(Collectors.toList());
 
-            // Estas "authorities" son las que hasAuthority('...') buscará en el backend
-            claims.put("authorities", authorities);
+            claims.put(ServiceStrings.Jwt.CLAIM_AUTHORITIES, authorities);
         } else {
-            claims.put("roles", java.util.List.of());
-            claims.put("authorities", java.util.List.of());
+            claims.put(ServiceStrings.Jwt.CLAIM_ROLES, java.util.List.of());
+            claims.put(ServiceStrings.Jwt.CLAIM_AUTHORITIES, java.util.List.of());
         }
 
         return Jwts.builder()
@@ -80,13 +76,12 @@ public class JwtService {
                 .compact();
     }
 
-    // =====================
-    // EXTRACCIÓN
-    // =====================
+    @Override
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
+    @Override
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
@@ -100,17 +95,14 @@ public class JwtService {
                 .getBody();
     }
 
-    // =====================
-    // VALIDACIÓN
-    // =====================
+    @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);
     }
 
     private boolean isTokenExpired(String token) {
-        return extractClaim(token, Claims::getExpiration)
-                .before(new Date());
+        return extractClaim(token, Claims::getExpiration).before(new Date());
     }
 
     private Key getSignInKey() {

@@ -200,26 +200,47 @@ public class GenericApiSteps {
         // Imprimimos el body para que tú mismo lo veas en la consola si falla
         System.out.println("🔍 [DEBUG LOGIN BODY]: " + body);
 
-        // Regex mejorado: Busca "access_token" o "accessToken", con o sin espacios
-        Pattern accessPattern = Pattern.compile("\"access_?token\"\\s*:\\s*\"([^\"]+)\"");
-        Pattern refreshPattern = Pattern.compile("\"refresh_?token\"\\s*:\\s*\"([^\"]+)\"");
+        // PRIORIDAD: la API devuelve access_token / refresh_token
+        Pattern accessPattern = Pattern.compile("\"access_token\"\\s*:\\s*\"([^\"]+)\"");
+        Pattern refreshPattern = Pattern.compile("\"refresh_token\"\\s*:\\s*\"([^\"]+)\"");
 
         Matcher accessMatcher = accessPattern.matcher(body);
         Matcher refreshMatcher = refreshPattern.matcher(body);
 
         if (accessMatcher.find()) {
             GenericApiSteps.accessToken = accessMatcher.group(1);
-            System.out.println("✅ [v3] Access Token persistido: " + GenericApiSteps.accessToken.substring(0, 10) + "...");
+            System.out.println("✅ [TOKEN] access_token capturado: " + GenericApiSteps.accessToken.substring(0, 10) + "...");
         }
 
         if (refreshMatcher.find()) {
             GenericApiSteps.refreshToken = refreshMatcher.group(1);
         }
 
-        // Si sigue siendo null, intentamos una captura bruta por si el JSON es simple
+        // Fallback: aceptamos variantes comunes si el JSON viene distinto
+        if (GenericApiSteps.accessToken == null) {
+            Pattern fallbackAccess = Pattern.compile("\"(?:accessToken|access-token|token|jwt)\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher m = fallbackAccess.matcher(body);
+            if (m.find()) {
+                GenericApiSteps.accessToken = m.group(1);
+                System.out.println("✅ [TOKEN] access_token capturado por fallback.");
+            }
+        }
+
+        if (GenericApiSteps.refreshToken == null) {
+            Pattern fallbackRefresh = Pattern.compile("\"(?:refreshToken|refresh-token)\"\\s*:\\s*\"([^\"]+)\"");
+            Matcher m = fallbackRefresh.matcher(body);
+            if (m.find()) {
+                GenericApiSteps.refreshToken = m.group(1);
+            }
+        }
+
+        // Último recurso: si el body es un JWT directo
         if (GenericApiSteps.accessToken == null && body.contains(".")) {
-            // Si el body es solo el token o tiene formato JWT, lo asignamos
-            if(body.split("\\.").length == 3) GenericApiSteps.accessToken = body.replace("\"", "");
+            String candidate = body.replace("\"", "").trim();
+            if (candidate.split("\\.").length == 3) {
+                GenericApiSteps.accessToken = candidate;
+                System.out.println("✅ [TOKEN] access_token capturado en modo bruto (JWT directo).");
+            }
         }
     }
 
@@ -573,3 +594,4 @@ public class GenericApiSteps {
         throw new PendingException();
     }
 }
+

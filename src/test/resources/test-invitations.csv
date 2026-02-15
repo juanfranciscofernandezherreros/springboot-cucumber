@@ -1,0 +1,5 @@
+email,name,description,role,status,created_at_iso,expires_at_iso,token
+pending1@test.com,Pending User 1,Invitación pendiente 1,USER,PENDING,2026-02-14T10:00:00Z,2026-02-16T10:00:00Z,token-pending-1
+pending2@test.com,Pending User 2,Invitación pendiente 2,USER,PENDING,2026-02-14T11:00:00Z,2026-02-16T11:00:00Z,token-pending-2
+accepted1@test.com,Accepted User 1,Invitación aceptada,USER,ACCEPTED,2026-02-13T10:00:00Z,2026-02-15T10:00:00Z,token-accepted-1
+rejected1@test.com,Rejected User 1,Invitación rechazada,USER,REJECTED,2026-02-13T11:00:00Z,2026-02-15T11:00:00Z,token-rejected-1

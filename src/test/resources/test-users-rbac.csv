@@ -1,0 +1,16 @@
+email,password,name,roles,privileges
+admin_update@test.com,admin123,Admin Update,ADMIN_UPDATE,admin:update
+admin_read@test.com,admin123,Admin Read,ADMIN_READ,admin:read
+admin_create@test.com,admin123,Admin Create,ADMIN_CREATE,admin:create
+admin_delete@test.com,admin123,Admin Delete,ADMIN_DELETE,admin:delete
+admin@test.com,admin123,Admin Master,ADMIN,"admin:read|admin:update|admin:create|admin:delete"
+limited-admin@test.com,admin123,Admin Limitado,LIMITED_ADMIN,"admin:read|admin:update|admin:create"
+admin_created@test.com,admin123,Admin Created,USER,"movie:stream:hd|course:access:java"
+auth_user@test.com,pass123,Auth Flow User,USER,"movie:stream:hd|course:access:java"
+premium@test.com,user123,Juan Premium,PREMIUM,"movie:stream:4k|movie:stream:hd|movie:download|course:access:java"
+user2@test.com,user123,Usuario Dos,USER,"movie:stream:hd|course:access:java"
+user3@test.com,user123,Usuario Tres,USER,"movie:stream:hd|course:access:java"
+user4@test.com,user123,Usuario Cuatro,USER,"movie:stream:hd|course:access:java"
+usuario2_login@test.com,user123,Usuario2 Login,USER,"movie:stream:hd|course:access:java"
+admin_mgmt_lock_read_update@test.com,admin123,Admin Mgmt Lock Read Update,ADMIN_MGMT_LOCK,"admin:read|admin:update"
+admin_mgmt_target_lock_01@test.com,user123,Admin Mgmt Target Lock 01,USER,"movie:stream:hd|course:access:java"

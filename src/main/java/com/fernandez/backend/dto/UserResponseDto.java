@@ -2,7 +2,7 @@ package com.fernandez.backend.dto;
 
 import java.util.List;
 
-public record UserResponse(
+public record UserResponseDto(
         Long id,
         String name,
         String email,

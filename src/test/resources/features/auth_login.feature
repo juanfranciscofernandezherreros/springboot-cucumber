@@ -5,7 +5,7 @@ Feature: Gestión de usuarios v2
     When v2 envío una petición POST a "/auth/login" con el cuerpo:
       """
       {
-        "email": "user2@test.com",
+        "email": "usuario2_login@test.com",
         "password": "user123"
       }
       """

@@ -1,10 +1,10 @@
 package com.fernandez.backend.dto;
 
-
-public record AdminCreateUserRequest(
+public record RegisterRequestDto(
         String name,
         String email,
         String password,
         String role
-) {}
+) {
+}
 

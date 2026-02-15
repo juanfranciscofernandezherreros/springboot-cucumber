@@ -1,6 +1,6 @@
 package com.fernandez.backend.config;
 
-import com.fernandez.backend.service.IpLockService;
+import com.fernandez.backend.service.IIpLockService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,7 +20,7 @@ import java.io.IOException;
 )
 public class IpFilter extends OncePerRequestFilter {
 
-    private final IpLockService ipLockService;
+    private final IIpLockService ipLockService;
 
     @Override
     protected void doFilterInternal(

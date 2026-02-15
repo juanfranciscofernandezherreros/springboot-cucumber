@@ -1,7 +1,8 @@
 package com.fernandez.backend.dto;
 
-public record AdminUpdateUserRequest(
+public record AdminUpdateUserRequestDto(
         String name,
-        String role,          // ⚠️ NO List
+        String role,
         Boolean accountNonLocked
 ) {}
+

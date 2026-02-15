@@ -6,8 +6,8 @@ Feature: Flujo de Autenticación v2
     When v2 envío una petición POST a "/auth/login" con el cuerpo:
       """
       {
-        "email": "user2@test.com",
-        "password": "user123"
+        "email": "auth_user@test.com",
+        "password": "pass123"
       }
       """
     Then v2 el código de estado debe ser 200

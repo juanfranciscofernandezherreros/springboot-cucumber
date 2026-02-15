@@ -2,9 +2,9 @@ package com.fernandez.backend.controller;
 
 import com.fernandez.backend.dto.*;
 import com.fernandez.backend.model.User;
-import com.fernandez.backend.service.AuthService;
-import com.fernandez.backend.service.UserService;
-import com.fernandez.backend.utils.constants.UserApiPaths;
+import com.fernandez.backend.service.IAuthService;
+import com.fernandez.backend.service.IUserService;
+import com.fernandez.backend.utils.constants.ApiPaths;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,41 +16,41 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @RestController
-@RequestMapping(UserApiPaths.BASE)
+@RequestMapping(ApiPaths.Users.BASE)
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('USER')")
+@PreAuthorize("isAuthenticated()")
 public class UserController {
 
-    private final UserService userService;
-    private final AuthService service;
+    private final IUserService userService;
+    private final IAuthService service;
 
-    @GetMapping(UserApiPaths.ME)
-    public ResponseEntity<UserResponse> getMyProfile(
+    @GetMapping(ApiPaths.Users.ME)
+    public ResponseEntity<UserResponseDto> getMyProfile(
             @AuthenticationPrincipal UserDetails userDetails
     ) {
-        AdminUserListResponse user =
+        AdminUserListResponseDto user =
                 userService.getUserStatus(userDetails.getUsername());
 
-        UserResponse response = new UserResponse(
-                user.getId(),
-                user.getName(),
-                user.getEmail(),
-                user.getRoles()
+        UserResponseDto response = new UserResponseDto(
+                user.id(),
+                user.name(),
+                user.email(),
+                user.roles()
         );
 
         return ResponseEntity.ok(response);
     }
 
 
-    @PutMapping(UserApiPaths.UPDATE)
-    public ResponseEntity<UserResponse> updateMyProfile(
+    @PutMapping(ApiPaths.Users.UPDATE)
+    public ResponseEntity<UserResponseDto> updateMyProfile(
             @AuthenticationPrincipal UserDetails userDetails,
-            @RequestBody UpdateUserRequest request
+            @RequestBody UpdateUserRequestDto request
     ) {
         User updatedUser =
                 userService.updateMyProfile(userDetails.getUsername(), request);
 
-        UserResponse response = new UserResponse(
+        UserResponseDto response = new UserResponseDto(
                 updatedUser.getId(),
                 updatedUser.getName(),
                 updatedUser.getEmail(),
@@ -63,15 +63,15 @@ public class UserController {
     }
 
 
-    @PostMapping("/me/password")
+    @PostMapping(ApiPaths.Users.CHANGE_PASSWORD)
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> changeMyPassword(
-            @RequestBody ResetPasswordRequest request,
+            @RequestBody ResetPasswordRequestDto request,
             Authentication authentication
     ) {
         String email = authentication.getName();
 
-        TokenResponse tokens =
+        TokenResponseDto tokens =
                 service.resetPasswordFromProfile(email, request.newPassword());
 
         return ResponseEntity.ok(

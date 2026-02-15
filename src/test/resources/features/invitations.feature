@@ -5,7 +5,7 @@ Feature: Consulta de listados de invitaciones para Administradores
     Given v2 envío una petición POST a "/auth/login" con el cuerpo:
       """
       {
-        "email": "admin@test.com",
+        "email": "admin_read@test.com",
         "password": "admin123"
       }
       """
@@ -18,7 +18,7 @@ Feature: Consulta de listados de invitaciones para Administradores
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe ser una lista con elementos
 
-    # 2. Invitaciones pendientes (debería haber al menos las 2 de Initializer)
+    # 2. Invitaciones pendientes (debería haber al menos las 2 del seed CSV: test-invitations.csv)
     When v2 envío una petición GET a "/api/v1/admin/invitations/pending" con autorización
     Then v2 el código de estado debe ser 200
     And v2 la respuesta debe ser una lista con elementos
