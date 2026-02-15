@@ -43,6 +43,7 @@ public class AuthService {
     private final EmailService emailService;
     private final SecurityNotificationProperties notificationProperties;
     private final SecurityLockProperties lockProperties;
+    private final TwoFactorService twoFactorService;
 
     private static final int MAX_FAILED_ATTEMPTS = 3;
 
@@ -277,5 +278,128 @@ public class AuthService {
         var tokens = tokenRepository.findAllValidTokenByUser(userId);
         tokens.forEach(t -> { t.setExpired(true); t.setRevoked(true); });
         tokenRepository.saveAll(tokens);
+    }
+
+    // --- Métodos de TOTP / 2FA ---
+
+    /**
+     * Configura TOTP para un usuario, generando el secreto y la URL del código QR
+     */
+    @Transactional
+    public TotpSetupResponse setupTotp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+
+        // Generar un nuevo secreto Base32
+        String secret = twoFactorService.generateSecretBase32();
+        
+        // Guardar el secreto pero aún no habilitar TOTP
+        user.setTotpSecret(secret);
+        user.setTotpEnabled(false);
+        userRepository.save(user);
+
+        // Generar la URL del código QR
+        String qrCodeUrl = twoFactorService.generateQrCodeUrl(email, secret);
+
+        log.info(LOG_TOTP_SETUP, email);
+        return new TotpSetupResponse(secret, qrCodeUrl);
+    }
+
+    /**
+     * Habilita TOTP después de verificar el código
+     */
+    @Transactional
+    public void enableTotp(String email, String code) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+
+        if (user.getTotpSecret() == null) {
+            throw new IllegalStateException(ERR_TOTP_NOT_SETUP);
+        }
+
+        // Validar el código de 6 dígitos
+        if (!twoFactorService.validateCode(user.getTotpSecret(), code)) {
+            throw new BadCredentialsException(ERR_TOTP_INVALID_CODE);
+        }
+
+        user.setTotpEnabled(true);
+        userRepository.save(user);
+        log.info(LOG_TOTP_ENABLED, email);
+    }
+
+    /**
+     * Deshabilita TOTP para un usuario
+     */
+    @Transactional
+    public void disableTotp(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+
+        user.setTotpEnabled(false);
+        user.setTotpSecret(null);
+        userRepository.save(user);
+        log.info(LOG_TOTP_DISABLED, email);
+    }
+
+    /**
+     * Verifica si TOTP está habilitado para un usuario
+     */
+    public TotpStatusResponse getTotpStatus(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException(ERR_USER_NOT_FOUND));
+        return new TotpStatusResponse(user.isTotpEnabled());
+    }
+
+    /**
+     * Login con TOTP
+     */
+    @Transactional
+    public TokenResponse loginWithTotp(LoginWithTotpRequest request, String clientIp) {
+        if (ipLockService.isIpBlocked(clientIp)) throw new IpBlockedException();
+
+        var user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> {
+                    ipLockService.registerFailedAttempt(clientIp);
+                    return new BadCredentialsException(ERR_BAD_CREDENTIALS);
+                });
+
+        if (!user.isAccountNonLocked()) {
+            long duration = getLockDuration(user.getLockCount());
+            if (duration == -1L) throw new LockedException(ERR_ACCOUNT_LOCKED_PERM);
+
+            if (shouldUnlock(user)) {
+                unlockUser(user);
+            } else {
+                long timeLeft = (user.getLockTime().getTime() + duration) - System.currentTimeMillis();
+                throw new LockedException(String.format(ERR_ACCOUNT_LOCKED_TEMP, timeLeft / 1000));
+            }
+        }
+
+        try {
+            // Autenticar usuario y contraseña
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password())
+            );
+
+            // Si TOTP está habilitado, validar el código
+            if (user.isTotpEnabled()) {
+                if (request.totpCode() == null || !twoFactorService.validateCode(user.getTotpSecret(), request.totpCode())) {
+                    ipLockService.registerFailedAttempt(clientIp);
+                    throw new BadCredentialsException(ERR_TOTP_INVALID_CODE);
+                }
+            }
+
+            resetAllAttempts(user);
+            var accessToken = jwtService.generateToken(user);
+            var refreshToken = jwtService.generateRefreshToken(user);
+            revokeAllUserTokens(user.getId());
+            saveUserToken(user, accessToken);
+            saveUserToken(user, refreshToken);
+            return new TokenResponse(accessToken, refreshToken);
+        } catch (BadCredentialsException e) {
+            updateFailedAttempts(request.email());
+            ipLockService.registerFailedAttempt(clientIp);
+            throw e;
+        }
     }
 }

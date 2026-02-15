@@ -61,6 +61,11 @@ public class User implements UserDetails {
 
     private Date lockTime;
 
+    private String totpSecret;
+
+    @Builder.Default
+    private boolean totpEnabled = false;
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         // 1. Extraemos los nombres de los roles (asegurando el prefijo ROLE_)

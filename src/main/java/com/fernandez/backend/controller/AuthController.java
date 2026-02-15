@@ -1,8 +1,6 @@
 package com.fernandez.backend.controller;
 
-import com.fernandez.backend.dto.LoginRequest;
-import com.fernandez.backend.dto.RegisterRequest;
-import com.fernandez.backend.dto.TokenResponse;
+import com.fernandez.backend.dto.*;
 import com.fernandez.backend.service.AuthService;
 import com.fernandez.backend.utils.constants.AuthApiPaths;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,5 +50,54 @@ public class AuthController {
     public ResponseEntity<Void> logout(@RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader) {
         service.logout(authHeader);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/totp/setup")
+    public ResponseEntity<TotpSetupResponse> setupTotp(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+    ) {
+        // Extraer el email del contexto de seguridad
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        return ResponseEntity.ok(service.setupTotp(email));
+    }
+
+    @PostMapping("/totp/enable")
+    public ResponseEntity<Void> enableTotp(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader,
+            @RequestBody TotpVerifyRequest request
+    ) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        service.enableTotp(email, request.code());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/totp/disable")
+    public ResponseEntity<Void> disableTotp(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+    ) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        service.disableTotp(email);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/totp/status")
+    public ResponseEntity<TotpStatusResponse> getTotpStatus(
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String authHeader
+    ) {
+        String email = org.springframework.security.core.context.SecurityContextHolder.getContext()
+                .getAuthentication().getName();
+        return ResponseEntity.ok(service.getTotpStatus(email));
+    }
+
+    @PostMapping("/totp/login")
+    public ResponseEntity<TokenResponse> loginWithTotp(
+            @RequestBody LoginWithTotpRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        String clientIp = httpRequest.getRemoteAddr();
+        return ResponseEntity.ok(service.loginWithTotp(request, clientIp));
     }
 }
