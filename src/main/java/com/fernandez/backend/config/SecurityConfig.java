@@ -64,13 +64,13 @@ public class SecurityConfig {
 
                         // --- A. RUTAS PÚBLICAS (Auth, Documentación, H2) ---
                         .requestMatchers(new AntPathRequestMatcher(ApiPaths.Security.PUBLIC_H2_CONSOLE)).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher(ApiPaths.Security.PUBLIC_STATIC)).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher(ApiPaths.Security.PUBLIC_AUTH)).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher(ApiPaths.Security.PUBLIC_SWAGGER_UI)).permitAll()
+                        .requestMatchers(new AntPathRequestMatcher(ApiPaths.Security.PUBLIC_OPENAPI_DOCS)).permitAll()
                         .requestMatchers(
                                 ApiPaths.Security.PUBLIC_ROOT,
-                                ApiPaths.Security.PUBLIC_INDEX,
-                                ApiPaths.Security.PUBLIC_STATIC,
-                                ApiPaths.Security.PUBLIC_AUTH,
-                                ApiPaths.Security.PUBLIC_SWAGGER_UI,
-                                ApiPaths.Security.PUBLIC_OPENAPI_DOCS
+                                ApiPaths.Security.PUBLIC_INDEX
                         ).permitAll()
 
                         // --- B. ENDPOINTS DE INVITACIÓN (invitation-controller) ---
