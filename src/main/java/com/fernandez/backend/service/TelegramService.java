@@ -3,13 +3,11 @@ package com.fernandez.backend.service;
 import com.fernandez.backend.utils.constants.ServiceStrings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Service
 public class TelegramService implements ITelegramService {
 
     @Value("${telegram.bot.token}")

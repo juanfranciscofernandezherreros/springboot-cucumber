@@ -1,7 +1,8 @@
 package com.fernandez.backend.config;
 
 import com.fernandez.backend.service.ILogoutService;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -20,13 +21,23 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity // Permite usar @PreAuthorize en los controladores
-@RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
     private final ILogoutService logoutHandler;
     private final CorsConfigurationSource corsConfigurationSource;
+
+    public SecurityConfig(JwtAuthFilter jwtAuthFilter,
+                          AuthenticationProvider authenticationProvider,
+                          ILogoutService logoutHandler,
+                          @Qualifier("corsConfigurationSource") CorsConfigurationSource corsConfigurationSource) {
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.authenticationProvider = authenticationProvider;
+        this.logoutHandler = logoutHandler;
+        this.corsConfigurationSource = corsConfigurationSource;
+    }
 
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
